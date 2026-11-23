@@ -15,4 +15,8 @@ This repository is being initialized. The first screens will connect to the Spri
 
 The frontend will use Angular and TypeScript and communicate with the Spring Boot API over HTTP.
 
+## Documentation
+
+- [System design](https://github.com/AriesMaster/stock-purchase-order-backend/blob/main/docs/system-design.md)
+
 [Spring Boot backend](https://github.com/AriesMaster/stock-purchase-order-backend)
