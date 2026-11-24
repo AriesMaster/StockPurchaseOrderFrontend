@@ -8,7 +8,7 @@ Angular web application for managing purchase orders, receiving deliveries and t
 
 - Angular 22, standalone components and TypeScript
 - SCSS, monochrome design system, responsive layout
-- Angular Material and CDK (installed; theme integration pending)
+- Angular Material and CDK (light theme with monochrome primary and surface overrides configured)
 - npm, Angular CLI and Vitest
 
 ## Getting started
@@ -62,12 +62,12 @@ Create a draft order, approve it, receive partial or complete deliveries, review
 | /purchase-orders/:id/receive | Record delivery | POST /api/purchase-orders/{id}/receipts |
 | /inventory | Stock and movement history | GET /api/inventory/{sku}; GET /api/stock-movements |
 
-Planned feature folders: `purchase-orders/` and `inventory/`, with feature-local models, API services, components and tests. Shared HTTP problem handling will live in `core/`. Angular HttpClient and a local API proxy to port 8080 are not configured yet. Receipt retries must reuse the original idempotency key and quantities.
+Planned feature folders: `purchase-orders/` and `inventory/`, with feature-local models, API services, components and tests. Shared HTTP problem handling will live in `core/`. Angular HttpClient and a local `/api/**` development proxy to port 8080 are configured. Shared error normalization lives in `core/api-problem.ts`; business API services remain pending. Receipt retries must reuse the original idempotency key and quantities.
 
 ## Roadmap
 
 - [x] Angular scaffold and responsive StockFlow homepage
-- [ ] Material theme, HTTP client and development proxy
+- [x] Material theme, HTTP client and development proxy (build verification pending)
 - [ ] Purchase order and inventory screens
 - [ ] API integration and validation/error handling
 - [ ] Feature tests and end-to-end verification

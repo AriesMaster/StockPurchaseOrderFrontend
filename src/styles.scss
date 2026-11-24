@@ -1,3 +1,22 @@
+@use '@angular/material' as mat;
+
+html {
+  color-scheme: light;
+  @include mat.theme((
+    color: mat.$azure-palette,
+    typography: Poppins,
+    density: 0,
+  ));
+  @include mat.theme-overrides((
+    primary: #111111,
+    on-primary: #ffffff,
+    primary-container: #eeeeee,
+    on-primary-container: #111111,
+    surface: #ffffff,
+    on-surface: #111111,
+  ));
+}
+
 :root {
   --primary-color: #111111;
   --background-color: #ffffff;
