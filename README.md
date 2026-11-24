@@ -1,90 +1,87 @@
-# Stock and Purchase Order System — Frontend
+# StockFlow — Frontend
 
-Angular application for staff to manage purchase orders, record deliveries, and review stock movements.
+Angular web application for managing purchase orders, receiving deliveries and tracking inventory for a small business.
 
-## Project status
+**Status:** Active development. The responsive public homepage, navigation, footer and routing are implemented. Business screens and API integration are planned, not yet operational.
 
-This repository is being initialized. The first screens will connect to the Spring Boot API once the purchase order endpoints are available.
+## Technology
 
-## Planned workflow
+- Angular 22, standalone components and TypeScript
+- SCSS, monochrome design system, responsive layout
+- Angular Material and CDK (installed; theme integration pending)
+- npm, Angular CLI and Vitest
 
-1. Create a draft purchase order and add the items and quantities required.
-2. Approve the order and view its delivery status.
-3. Record a partial or full delivery against the order.
-4. See how much is still outstanding and review the resulting stock movement.
+## Getting started
 
-The frontend will use Angular and TypeScript and communicate with the Spring Boot API over HTTP.
+Install Node.js compatible with Angular 22 and npm, then run:
 
-## Planned file structure
-
-This is the target tree for the first release. The Angular files will be added as the frontend is scaffolded. Feature folders keep each screen, its API calls, and its tests together.
-
-```text
-StockPurchaseOrderFrontend/
-├── .editorconfig
-├── .gitignore
-├── README.md
-├── angular.json
-├── package.json
-├── package-lock.json
-├── proxy.conf.json
-├── tsconfig.json
-├── tsconfig.app.json
-├── tsconfig.spec.json
-└── src/
-    ├── index.html
-    ├── main.ts
-    ├── styles.scss
-    └── app/
-        ├── app.component.ts
-        ├── app.component.html
-        ├── app.config.ts
-        ├── app.routes.ts
-        ├── core/
-        │   └── api-problem.ts
-        └── features/
-            ├── purchase-orders/
-            │   ├── purchase-order.models.ts
-            │   ├── purchase-orders.api.ts
-            │   ├── purchase-orders.api.spec.ts
-            │   ├── order-lookup.component.ts
-            │   ├── order-lookup.component.html
-            │   ├── create-order.component.ts
-            │   ├── create-order.component.html
-            │   ├── create-order.component.spec.ts
-            │   ├── order-detail.component.ts
-            │   ├── order-detail.component.html
-            │   ├── order-detail.component.spec.ts
-            │   ├── receive-delivery.component.ts
-            │   ├── receive-delivery.component.html
-            │   └── receive-delivery.component.spec.ts
-            └── inventory/
-                ├── inventory.models.ts
-                ├── inventory.api.ts
-                ├── inventory.api.spec.ts
-                ├── inventory.component.ts
-                ├── inventory.component.html
-                └── inventory.component.spec.ts
+```bash
+git clone https://github.com/AriesMaster/StockPurchaseOrderFrontend.git
+cd StockPurchaseOrderFrontend
+npm ci
+npm start
 ```
 
-## Screens and API integration
+Open http://localhost:4200.
 
-| Route | Screen | Spring Boot API |
+```bash
+npm run build
+npm test -- --watch=false
+```
+
+## Current source structure
+
+```text
+src/
+├── app/
+│   ├── features/home/                 # Public landing page
+│   ├── layouts/public-layout/         # Shared public shell
+│   ├── shared/components/
+│   │   ├── navbar/
+│   │   └── footer/
+│   ├── app.ts
+│   ├── app.html
+│   ├── app.scss
+│   ├── app.spec.ts
+│   ├── app.config.ts
+│   └── app.routes.ts
+├── index.html
+├── main.ts
+└── styles.scss
+```
+
+## Planned application workflow
+
+Create a draft order, approve it, receive partial or complete deliveries, review outstanding quantities and inspect inventory movements. For example, receiving 12 of 20 ordered units leaves 8 outstanding.
+
+| Planned route | Purpose | Backend API |
 |---|---|---|
-| `/purchase-orders` | Look up an order by ID and navigate to its details. | The order detail screen loads the order by ID. |
-| `/purchase-orders/new` | Create a draft order using a reactive form with SKU and quantity inputs. | `POST /api/purchase-orders` |
-| `/purchase-orders/:id` | View order status and quantities. Approve or cancel when the order status allows it. | `GET /api/purchase-orders/{id}`, `POST /api/purchase-orders/{id}/approval`, `POST /api/purchase-orders/{id}/cancellation` |
-| `/purchase-orders/:id/receive` | Record a partial or full delivery and display the receipt. | `GET /api/purchase-orders/{id}`, `POST /api/purchase-orders/{id}/receipts` |
-| `/inventory` | Look up stock by SKU and view movement history. | `GET /api/inventory/{sku}`, `GET /api/stock-movements` |
+| /purchase-orders | Order lookup | GET /api/purchase-orders/{id} |
+| /purchase-orders/new | Create draft | POST /api/purchase-orders |
+| /purchase-orders/:id | Details, approval and cancellation | GET /api/purchase-orders/{id}; POST /api/purchase-orders/{id}/approval or /cancellation |
+| /purchase-orders/:id/receive | Record delivery | POST /api/purchase-orders/{id}/receipts |
+| /inventory | Stock and movement history | GET /api/inventory/{sku}; GET /api/stock-movements |
 
-`app.config.ts` registers standalone routing and Angular's HTTP client. `proxy.conf.json` forwards local `/api` requests to Spring Boot during frontend development. A production API URL or proxy will be configured when the hosting setup is chosen.
+Planned feature folders: `purchase-orders/` and `inventory/`, with feature-local models, API services, components and tests. Shared HTTP problem handling will live in `core/`. Angular HttpClient and a local API proxy to port 8080 are not configured yet. Receipt retries must reuse the original idempotency key and quantities.
 
-The delivery screen reuses the original idempotency key and quantities when retrying the same submission. Its tests cover that retry and the outstanding quantity shown after a successful receipt. API tests cover request URLs, payloads, and the receipt header. Screen tests cover form validation, order actions, and inventory lookups.
+## Roadmap
+
+- [x] Angular scaffold and responsive StockFlow homepage
+- [ ] Material theme, HTTP client and development proxy
+- [ ] Purchase order and inventory screens
+- [ ] API integration and validation/error handling
+- [ ] Feature tests and end-to-end verification
+- [ ] CI/CD and deployment
+
+Authentication, dashboard and additional modules require scope/design decisions.
 
 ## Documentation
 
+- [Backend repository](https://github.com/AriesMaster/StockPurchaseOrderBackend)
 - [System design](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/main/docs/system-design.md)
+- [API contract](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/main/docs/api-contract.md)
+- [Database design and ERD](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/main/docs/database-design.md)
+- [Technical specification](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/main/docs/technical-specification.md)
+- [Physical DFD](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/main/docs/physical-dfd.md)
 
-- [Spring Boot API contract](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/main/docs/api-contract.md)
-
-[Spring Boot backend](https://github.com/AriesMaster/StockPurchaseOrderBackend)
+See [LICENSE](LICENSE).
