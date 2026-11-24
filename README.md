@@ -2,7 +2,7 @@
 
 Angular web application for managing purchase orders, receiving deliveries and tracking inventory for a small business.
 
-**Status:** Active development. The responsive public homepage, navigation, footer and routing are implemented. Business screens and API integration are planned, not yet operational.
+**Status:** Active development. The responsive public homepage, navigation, footer and routing are implemented. Business screens and API integration are planned, not yet operational. The companion Spring Boot backend now starts against Supabase PostgreSQL, with seven application tables created by Flyway and a verified Actuator health response. Business endpoints and JPA mappings remain pending.
 
 ## Technology
 
