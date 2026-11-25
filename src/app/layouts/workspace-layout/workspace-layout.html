@@ -1,0 +1,16 @@
+<div class="workspace">
+  <header><a routerLink="/dashboard" class="brand">SF · StockFlow.</a><button type="button" (click)="open.update(v => !v)" [attr.aria-expanded]="open()" aria-controls="workspace-nav">Menu</button><span>{{ auth.user()?.email }}</span></header>
+  <aside id="workspace-nav" [class.open]="open()">
+    <p class="label">WORKSPACE</p>
+    <nav aria-label="Workspace navigation">
+      <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" (click)="open.set(false)">Overview</a>
+    </nav>
+    <p class="label">PLANNED MODULES</p>
+    <span>Purchase orders</span><span>Products &amp; suppliers</span><span>Inventory</span>
+    @if (auth.role() === 'ADMIN' || auth.role() === 'APPROVER') { <span>Approvals</span> }
+    @if (auth.role() === 'ADMIN' || auth.role() === 'WAREHOUSE_OFFICER') { <span>Deliveries</span> }
+    @if (auth.role() === 'ADMIN') { <span>User management</span> }
+    <div class="profile"><strong>{{ roleLabel() }}</strong><small>StockFlow workspace</small></div>
+  </aside>
+  <main><router-outlet /></main>
+</div>
