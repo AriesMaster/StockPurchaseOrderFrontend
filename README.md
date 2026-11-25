@@ -2,7 +2,11 @@
 
 Angular web application for managing purchase orders, receiving deliveries and tracking inventory for a small business.
 
-**Status:** Active development. The responsive public homepage, navigation, footer and routing are implemented. Business screens and API integration are planned, not yet operational. The companion Spring Boot backend now starts against Supabase PostgreSQL, with seven application tables created by Flyway and a verified Actuator health response. Business endpoints and JPA mappings remain pending.
+**Status:** Active development. `main` includes the responsive public homepage, navigation, routing, Material theme, Angular HTTP client and local API proxy. Purchase order and inventory screens and their API integration are planned.
+
+## Authentication progress
+
+The [authentication feature branch](https://github.com/AriesMaster/StockPurchaseOrderFrontend/tree/feature/auth-ui) adds the login form, signal-based authentication state with in-memory access tokens, an API interceptor, route guards, and a protected workspace. The [Angular CI workflow passed](https://github.com/AriesMaster/StockPurchaseOrderFrontend/actions/runs/45669859781) on that branch. The login UI still needs to connect to the backend authentication endpoints.
 
 ## Technology
 
@@ -67,13 +71,14 @@ Planned feature folders: `purchase-orders/` and `inventory/`, with feature-local
 ## Roadmap
 
 - [x] Angular scaffold and responsive StockFlow homepage
-- [x] Material theme, HTTP client and development proxy (build verification pending)
+- [x] Material theme, HTTP client and development proxy
+- [x] Login UI, auth state, guards and protected workspace on `feature/auth-ui`
+- [ ] End-to-end sign-in with the Spring Boot API
 - [ ] Purchase order and inventory screens
 - [ ] API integration and validation/error handling
 - [ ] Feature tests and end-to-end verification
-- [ ] CI/CD and deployment
-
-Authentication, dashboard and additional modules require scope/design decisions.
+- [x] Automated Angular CI on `feature/auth-ui`
+- [ ] Deployment
 
 ## Documentation
 
