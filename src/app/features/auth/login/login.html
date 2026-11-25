@@ -1,0 +1,27 @@
+<section class="login-shell container">
+  <div class="surface-card login-card">
+    <a routerLink="/" class="back">← Back to home</a>
+    <p class="eyebrow">STOCKFLOW / WORKSPACE</p>
+    <h1>Welcome back.</h1>
+    <p class="intro">Sign in to manage purchasing and inventory.</p>
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <label for="email">Email address</label>
+      <input id="email" type="email" formControlName="email" autocomplete="username" required />
+      @if (form.controls.email.touched && form.controls.email.invalid) {
+        <p class="error">Enter a valid email address.</p>
+      }
+      <label for="password">Password</label>
+      <div class="password-field">
+        <input id="password" [type]="showPassword() ? 'text' : 'password'" formControlName="password" autocomplete="current-password" required />
+        <button type="button" (click)="showPassword.update(v => !v)" [attr.aria-pressed]="showPassword()">{{ showPassword() ? 'Hide' : 'Show' }}</button>
+      </div>
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+        <p class="error">Enter your password.</p>
+      }
+      <button class="btn btn-primary submit" type="submit">Sign in</button>
+      @if (message()) { <p role="status">{{ message() }}</p> }
+    </form>
+    <p class="note">Access is by invitation only. Contact your administrator for an account.</p>
+    <p class="note">Preview — authentication API not connected.</p>
+  </div>
+</section>
