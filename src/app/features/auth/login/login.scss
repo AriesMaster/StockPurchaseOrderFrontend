@@ -1,0 +1,14 @@
+.login-shell { display: grid; place-items: center; min-height: 70vh; padding-block: 48px; }
+.login-card { width: min(100%, 460px); }
+.back, .note, .intro { color: var(--secondary-text); font-size: .88rem; }
+.eyebrow { font-size: .72rem; font-weight: 600; letter-spacing: .12em; margin-top: 24px; }
+h1 { font-size: clamp(1.8rem, 5vw, 2.5rem); line-height: 1.2; margin-block: 8px; }
+form { display: grid; gap: 10px; margin-block: 24px; }
+label { font-size: .88rem; font-weight: 600; }
+input { width: 100%; min-width: 0; border: 1px solid #777; border-radius: 8px; padding: 12px; background: white; color: #111; }
+.password-field { display: flex; gap: 8px; }
+.password-field button { background: white; border: 1px solid #777; border-radius: 8px; padding: 8px; cursor: pointer; }
+.submit { margin-top: 12px; width: 100%; }
+.error { color: #a12626; font-size: .8rem; }
+.note + .note { margin-top: 8px; }
+@media (max-width: 480px) { .login-card { padding: 22px; } }
