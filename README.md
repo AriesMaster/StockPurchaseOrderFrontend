@@ -1,6 +1,8 @@
 # StockFlow — Frontend
 
-Angular web application for managing purchase orders, receiving deliveries and tracking inventory for a small business.
+Angular web application for managing purchase orders, receiving deliveries and tracking inventory for small hardware stores.
+
+[Portfolio case study](https://thabo.netlify.app/stockflow.html)
 
 **Status:** Active development. `main` includes the responsive public homepage, navigation, routing, Material theme, Angular HTTP client and local API proxy. Purchase order and inventory screens and their API integration are planned.
 
