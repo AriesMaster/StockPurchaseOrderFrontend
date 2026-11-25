@@ -1,0 +1,10 @@
+.workspace { min-height:100vh; display:grid; grid-template-columns:240px minmax(0,1fr); grid-template-rows:auto 1fr; background:var(--surface-color); }
+header { grid-column:1/-1; display:flex; align-items:center; gap:16px; justify-content:space-between; padding:16px 24px; background:white; border-bottom:1px solid var(--border-color); overflow-wrap:anywhere; }
+.brand { font-weight:700; } header button { display:none; }
+aside { background:white; border-right:1px solid var(--border-color); padding:24px 16px; display:flex; flex-direction:column; gap:12px; }
+.label { font-size:.72rem; letter-spacing:.1em; color:var(--secondary-text); margin-top:12px; }
+aside span { color:var(--secondary-text); font-size:.85rem; padding:8px; }
+nav a { display:block; padding:12px; border-radius:8px; } nav a.active { background:#111; color:white; }
+.profile { margin-top:auto; border-top:1px solid var(--border-color); padding-top:16px; overflow-wrap:anywhere; } .profile small { display:block; }
+main { padding:clamp(16px,4vw,40px); min-width:0; }
+@media(max-width:760px) { .workspace { grid-template-columns:minmax(0,1fr); } header { flex-wrap:wrap; } header button { display:block; } aside { display:none; } aside.open { display:flex; } }
