@@ -1,8 +1,44 @@
 # StockFlow — Frontend
 
-Angular web application for managing purchase orders, receiving deliveries and tracking inventory for a small business.
+Angular web application for managing purchase orders, receiving deliveries and tracking inventory for small hardware stores.
 
-**Status:** Active development. The responsive public homepage, navigation, footer and routing are implemented. Business screens and API integration are planned, not yet operational. The companion Spring Boot backend now starts against Supabase PostgreSQL, with seven application tables created by Flyway and a verified Actuator health response. Business endpoints and JPA mappings remain pending.
+[Portfolio case study](https://thabo.netlify.app/stockflow.html)
+
+**Status:** Active development. This is the authentication feature branch; the default-branch baseline is described below. `main` includes the responsive public homepage, navigation, routing, Material theme, Angular HTTP client and local API proxy. Purchase order and inventory screens and their API integration are planned.
+
+## Authentication progress
+
+The [authentication feature branch](https://github.com/AriesMaster/StockPurchaseOrderFrontend/tree/feature/auth-ui) adds the login form, signal-based authentication state with in-memory access tokens, an API interceptor, route guards, and a protected workspace. The [Angular CI workflow passed](https://github.com/AriesMaster/StockPurchaseOrderFrontend/actions/runs/45669859781) on that branch. The login UI still needs to connect to the backend authentication endpoints. The four role identifiers are defined in the frontend models; navigation guards are not a substitute for backend authorization. The four role identifiers are defined in the frontend models; navigation guards are not a substitute for backend authorization.
+
+## System users and responsibilities
+
+StockFlow is an internal procurement system for small hardware stores. It supports multiple employee accounts across four roles, with one role per account initially. Public self-registration is not planned; administrators will provision or invite employees.
+
+| Role | Intended responsibilities |
+|---|---|
+| Administrator (`ADMIN`) | Manage accounts, roles, suppliers and products; oversee and perform authorized procurement operations. |
+| Purchasing Officer (`PURCHASING_OFFICER`) | Create draft purchase orders, submit for approval and cancel eligible orders. |
+| Approver (`APPROVER`) | Review and approve orders, and cancel eligible orders. |
+| Warehouse Officer (`WAREHOUSE_OFFICER`) | Record partial or complete deliveries and monitor inventory movements. |
+
+All active roles are intended to read orders, products, inventory and stock movements. Business rules apply even to administrators. The workflow is purchasing officer creates order → approver approves → warehouse officer receives goods → inventory is updated. Four demo accounts (one per role) are planned, not yet provisioned.
+
+Role definitions and authentication foundations exist on the feature branches; business permissions, account invitations and role-specific functional screens remain planned.
+
+## System users and responsibilities
+
+StockFlow is an internal procurement system for small hardware stores. It supports multiple employee accounts across four roles, with one role per account initially. Public self-registration is not planned; administrators will provision or invite employees.
+
+| Role | Intended responsibilities |
+|---|---|
+| Administrator (`ADMIN`) | Manage accounts, roles, suppliers and products; oversee and perform authorized procurement operations. |
+| Purchasing Officer (`PURCHASING_OFFICER`) | Create draft purchase orders, submit for approval and cancel eligible orders. |
+| Approver (`APPROVER`) | Review and approve orders, and cancel eligible orders. |
+| Warehouse Officer (`WAREHOUSE_OFFICER`) | Record partial or complete deliveries and monitor inventory movements. |
+
+All active roles are intended to read orders, products, inventory and stock movements. Business rules apply even to administrators. The workflow is purchasing officer creates order → approver approves → warehouse officer receives goods → inventory is updated. Four demo accounts (one per role) are planned, not yet provisioned.
+
+Role definitions and authentication foundations exist on the feature branches; business permissions, account invitations and role-specific functional screens remain planned.
 
 ## Technology
 
@@ -18,6 +54,7 @@ Install Node.js compatible with Angular 22 and npm, then run:
 ```bash
 git clone https://github.com/AriesMaster/StockPurchaseOrderFrontend.git
 cd StockPurchaseOrderFrontend
+git switch feature/auth-ui
 npm ci
 npm start
 ```
@@ -28,6 +65,10 @@ Open http://localhost:4200.
 npm run build
 npm test -- --watch=false
 ```
+
+## Build and test verification
+
+On 25 November 2026, the local Angular production build succeeded and 20 Vitest tests passed on the authentication feature branch. The suite covers authentication state, the API interceptor and route guards.
 
 ## Current source structure
 
@@ -67,13 +108,14 @@ Planned feature folders: `purchase-orders/` and `inventory/`, with feature-local
 ## Roadmap
 
 - [x] Angular scaffold and responsive StockFlow homepage
-- [x] Material theme, HTTP client and development proxy (build verification pending)
+- [x] Material theme, HTTP client and development proxy
+- [x] Login UI, auth state, guards and protected workspace on `feature/auth-ui`
+- [ ] End-to-end sign-in with the Spring Boot API
 - [ ] Purchase order and inventory screens
 - [ ] API integration and validation/error handling
 - [ ] Feature tests and end-to-end verification
-- [ ] CI/CD and deployment
-
-Authentication, dashboard and additional modules require scope/design decisions.
+- [x] Automated Angular CI on `feature/auth-ui`
+- [ ] Deployment
 
 ## Documentation
 
