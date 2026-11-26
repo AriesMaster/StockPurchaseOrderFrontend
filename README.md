@@ -35,6 +35,10 @@ npm run build
 npm test -- --watch=false
 ```
 
+## Build and test verification
+
+On 25 November 2026, the local Angular production build succeeded and 20 Vitest tests passed on the authentication feature branch. The suite covers authentication state, the API interceptor and route guards.
+
 ## Current source structure
 
 ```text
