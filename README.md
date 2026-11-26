@@ -11,7 +11,7 @@ Angular web application for managing purchase orders, receiving deliveries and t
 
 ## Implementation progress
 
-Local verification on 26 November 2026: 98 backend tests and 66 frontend tests passed (164 combined); both builds succeeded. Authentication and administrator employee management were exercised locally. Supplier API integration tests passed; Angular supplier interface compiled, but dedicated frontend supplier tests and browser acceptance remain pending. Four role accounts were provisioned locally; full role-by-role browser verification and isolated public demo protection remain pending. Cloud preview and API proxy CSRF response were verified earlier; latest feature deployment and full cloud workflows have not been reverified.
+Local verification on 26 November 2026: 98 backend and 66 frontend automated tests passed (164 combined), and both builds succeeded before the latest supplier styling refinement. Administrator sign-in, employee administration, supplier creation and supplier directory rendering were demonstrated locally. The refined supplier UI groups contact details, improves responsive form layout and exposes row actions. Dedicated supplier frontend tests, remaining supplier acceptance checks, full role verification and secure public demo access are pending. Latest cloud authentication remains unverified.
 
 - Authentication: login, refresh, logout, session restoration, guards and API interceptor.
 - Employee Management: administrator-only account creation, pagination, role and status changes, confirmation dialogs.
@@ -95,13 +95,17 @@ Planned feature folders: `purchase-orders/` and `inventory/`, with feature-local
 
 ## Roadmap
 
+- [x] Local supplier creation and directory rendering
+- [x] Refined supplier layout visually verified
+- [ ] Secure public demo access and deployed login verification
+
 - [x] Angular scaffold and responsive StockFlow homepage
 - [x] Material theme, HTTP client and development proxy
 - [x] Login UI, auth state, guards and protected workspace on `feature/auth-ui`
 - [x] Local administrator sign-in with Spring Boot API
 - [x] Employee Management UI and tests
 - [x] Supplier Management UI and build
-- [ ] Supplier-specific tests and browser acceptance
+- [ ] Remaining supplier browser acceptance and supplier-specific tests
 - [ ] Purchase order and inventory screens
 - [ ] API integration and validation/error handling
 - [ ] Feature tests and end-to-end verification
@@ -112,7 +116,7 @@ Planned feature folders: `purchase-orders/` and `inventory/`, with feature-local
 
 ## Documentation
 
-- [Backend repository](https://github.com/AriesMaster/StockPurchaseOrderBackend)
+- [Backend repository](https://github.com/AriesMaster/StockPurchaseOrderBackend/tree/feature/auth-persistence)
 - [System design](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/feature/auth-persistence/docs/system-design.md)
 - [API contract](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/feature/auth-persistence/docs/api-contract.md)
 - [Database design and ERD](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/feature/auth-persistence/docs/database-design.md)
