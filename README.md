@@ -4,6 +4,9 @@ Angular web application for managing purchase orders, receiving deliveries and t
 
 [Portfolio case study](https://thabo.netlify.app/stockflow.html)
 
+**Live development preview:** [Angular frontend](https://stockflow-management.netlify.app/) · [Backend health](https://stockflow-backend-5cke.onrender.com/actuator/health). Both hosting dashboards confirm deployment; backend health returned `UP` on 26 November 2026. The Netlify same-origin API proxy is configured; browser integration and end-to-end authentication remain unverified.
+
+
 **Status:** Active development. This is the authentication feature branch; the default-branch baseline is described below. `main` includes the responsive public homepage, navigation, routing, Material theme, Angular HTTP client and local API proxy. Purchase order and inventory screens and their API integration are planned.
 
 ## Authentication progress
@@ -68,7 +71,7 @@ npm test -- --watch=false
 
 ## Build and test verification
 
-On 25 November 2026, the local Angular production build succeeded and 20 Vitest tests passed on the authentication feature branch. The suite covers authentication state, the API interceptor and route guards.
+On 26 November 2026, the local Angular production build succeeded and 30 Vitest tests passed on the authentication feature branch. The suite covers authentication state, the API interceptor and route guards.
 
 ## Current source structure
 
@@ -115,7 +118,8 @@ Planned feature folders: `purchase-orders/` and `inventory/`, with feature-local
 - [ ] API integration and validation/error handling
 - [ ] Feature tests and end-to-end verification
 - [x] Automated Angular CI on `feature/auth-ui`
-- [ ] Deployment
+- [x] Netlify development preview deployment
+- [ ] Verify deployed API proxy and browser authentication
 
 ## Documentation
 
@@ -127,3 +131,7 @@ Planned feature folders: `purchase-orders/` and `inventory/`, with feature-local
 - [Physical DFD](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/main/docs/physical-dfd.md)
 
 See [LICENSE](LICENSE).
+
+## Cloud deployment
+
+Netlify builds `feature/auth-ui` with Node 26.13.0 and `npm run build`, publishing `dist/stock-purchase-order-frontend/browser`. The feature branch `netlify.toml` proxies `/api/*` to Render before the SPA fallback. No database credentials or JWT signing secrets belong in the frontend. The published preview is not a completed authentication workflow.
