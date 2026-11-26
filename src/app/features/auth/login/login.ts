@@ -1,6 +1,12 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject, DestroyRef } from '@angular/core';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
+
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { switchMap, finalize } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AuthStore } from '../../../core/auth/services/auth.store';
+import { AuthResponse } from '../../../core/auth/models/auth.models';
 
 @Component({
   selector: 'app-login',
@@ -9,6 +15,11 @@ import { RouterLink } from '@angular/router';
   styleUrl: './login.scss',
 })
 export class Login {
+  private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthStore);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  readonly pending = signal(false);
   readonly showPassword = signal(false);
   readonly message = signal('');
   readonly form = new FormGroup({
@@ -18,8 +29,24 @@ export class Login {
 
   submit(): void {
     this.form.markAllAsTouched();
-    if (this.form.invalid) return;
-    this.message.set('Sign-in is not available yet. Authentication API integration is in development.');
-    this.form.controls.password.reset();
+    if (this.form.invalid || this.pending()) return;
+    this.pending.set(true);
+    this.message.set('');
+    const credentials = this.form.getRawValue();
+    this.http.get<void>('/api/auth/csrf').pipe(
+      switchMap(() => this.http.post<AuthResponse>('/api/auth/login', credentials)),
+      takeUntilDestroyed(this.destroyRef),
+      finalize(() => { this.pending.set(false); this.form.controls.password.reset(); }),
+    ).subscribe({
+      next: response => {
+        this.auth.setSession(response);
+        void this.router.navigate(['/dashboard']);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.message.set(error.status === 401 ? 'Invalid email or password.' :
+          error.status === 403 ? 'Security verification failed. Please try again.' :
+          'Unable to sign in right now. Please try again.');
+      },
+    });
   }
 }
