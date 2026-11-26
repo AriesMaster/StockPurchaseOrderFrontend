@@ -7,6 +7,7 @@
     </div>
     <div class="header-end">
       <button type="button" class="help-button" (click)="toggleHelp()" [attr.aria-expanded]="helpOpen()" aria-controls="workspace-help" matTooltip="Learn how to use your workspace">? <span>Help</span></button>
+      <button class="help-button" type="button" (click)="logout()" [disabled]="signingOut()">{{ signingOut() ? 'Signing out…' : 'Sign out' }}</button>
       <div class="identity"><strong>{{ roleLabel() }}</strong><small>{{ auth.user()?.email }}</small></div>
     </div>
   </header>
@@ -25,6 +26,7 @@
     </div>
   </aside>
   <main id="workspace-content" tabindex="-1">
+    @if (logoutError()) { <p role="alert">{{ logoutError() }}</p> }
     <section id="workspace-help" class="help-panel" [hidden]="!helpOpen()" aria-labelledby="help-title">
       <div class="help-heading"><h2 id="help-title">Using StockFlow</h2><button type="button" (click)="helpOpen.set(false)">Close</button></div>
       <p>Start with Overview. Your workspace shows the modules relevant to your role. Modules marked Planned are not available yet.</p>
