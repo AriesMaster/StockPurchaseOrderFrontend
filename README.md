@@ -4,44 +4,23 @@ Angular web application for managing purchase orders, receiving deliveries and t
 
 [Portfolio case study](https://thabo.netlify.app/stockflow.html)
 
-**Live development preview:** [Angular frontend](https://stockflow-management.netlify.app/) · [Backend health](https://stockflow-backend-5cke.onrender.com/actuator/health). Both hosting dashboards confirm deployment; backend health returned `UP` on 26 November 2026. The Netlify same-origin API proxy is configured; browser integration and end-to-end authentication remain unverified.
+**Live development preview:** [Angular frontend](https://stockflow-management.netlify.app/) · [Backend health](https://stockflow-backend-5cke.onrender.com/actuator/health). Both hosting dashboards confirm deployment; backend health returned `UP` on 26 November 2026. The Netlify same-origin API proxy is configured; proxy CSRF response was verified; full cloud workflows remain unverified.
 
 
 **Status:** Active development. This is the authentication feature branch; the default-branch baseline is described below. `main` includes the responsive public homepage, navigation, routing, Material theme, Angular HTTP client and local API proxy. Purchase order and inventory screens and their API integration are planned.
 
-## Authentication progress
+## Implementation progress
 
-The [authentication feature branch](https://github.com/AriesMaster/StockPurchaseOrderFrontend/tree/feature/auth-ui) adds the login form, signal-based authentication state with in-memory access tokens, an API interceptor, route guards, and a protected workspace. The [Angular CI workflow passed](https://github.com/AriesMaster/StockPurchaseOrderFrontend/actions/runs/45669859781) on that branch. The login UI still needs to connect to the backend authentication endpoints. The four role identifiers are defined in the frontend models; navigation guards are not a substitute for backend authorization. The four role identifiers are defined in the frontend models; navigation guards are not a substitute for backend authorization.
+Local verification on 26 November 2026: 98 backend tests and 66 frontend tests passed (164 combined); both builds succeeded. Authentication and administrator employee management were exercised locally. Supplier API integration tests passed; Angular supplier interface compiled, but dedicated frontend supplier tests and browser acceptance remain pending. Four role accounts were provisioned locally; full role-by-role browser verification and isolated public demo protection remain pending. Cloud preview and API proxy CSRF response were verified earlier; latest feature deployment and full cloud workflows have not been reverified.
 
-## System users and responsibilities
+- Authentication: login, refresh, logout, session restoration, guards and API interceptor.
+- Employee Management: administrator-only account creation, pagination, role and status changes, confirmation dialogs.
+- Supplier Management: all-role read/search, administrator create/edit/status actions, reactive forms, pagination and confirmation dialogs.
+- Purchase orders, approvals, deliveries and inventory remain planned UI modules.
 
-StockFlow is an internal procurement system for small hardware stores. It supports multiple employee accounts across four roles, with one role per account initially. Public self-registration is not planned; administrators will provision or invite employees.
+## Roles
 
-| Role | Intended responsibilities |
-|---|---|
-| Administrator (`ADMIN`) | Manage accounts, roles, suppliers and products; oversee and perform authorized procurement operations. |
-| Purchasing Officer (`PURCHASING_OFFICER`) | Create draft purchase orders, submit for approval and cancel eligible orders. |
-| Approver (`APPROVER`) | Review and approve orders, and cancel eligible orders. |
-| Warehouse Officer (`WAREHOUSE_OFFICER`) | Record partial or complete deliveries and monitor inventory movements. |
-
-All active roles are intended to read orders, products, inventory and stock movements. Business rules apply even to administrators. The workflow is purchasing officer creates order → approver approves → warehouse officer receives goods → inventory is updated. Four demo accounts (one per role) are planned, not yet provisioned.
-
-Role definitions and authentication foundations exist on the feature branches; business permissions, account invitations and role-specific functional screens remain planned.
-
-## System users and responsibilities
-
-StockFlow is an internal procurement system for small hardware stores. It supports multiple employee accounts across four roles, with one role per account initially. Public self-registration is not planned; administrators will provision or invite employees.
-
-| Role | Intended responsibilities |
-|---|---|
-| Administrator (`ADMIN`) | Manage accounts, roles, suppliers and products; oversee and perform authorized procurement operations. |
-| Purchasing Officer (`PURCHASING_OFFICER`) | Create draft purchase orders, submit for approval and cancel eligible orders. |
-| Approver (`APPROVER`) | Review and approve orders, and cancel eligible orders. |
-| Warehouse Officer (`WAREHOUSE_OFFICER`) | Record partial or complete deliveries and monitor inventory movements. |
-
-All active roles are intended to read orders, products, inventory and stock movements. Business rules apply even to administrators. The workflow is purchasing officer creates order → approver approves → warehouse officer receives goods → inventory is updated. Four demo accounts (one per role) are planned, not yet provisioned.
-
-Role definitions and authentication foundations exist on the feature branches; business permissions, account invitations and role-specific functional screens remain planned.
+ADMIN, PURCHASING_OFFICER, APPROVER and WAREHOUSE_OFFICER. Backend authorization is authoritative; Angular guards and conditional controls are not security boundaries.
 
 ## Technology
 
@@ -71,14 +50,20 @@ npm test -- --watch=false
 
 ## Build and test verification
 
-On 26 November 2026, the local Angular production build succeeded and 30 Vitest tests passed on the authentication feature branch. The suite covers authentication state, the API interceptor and route guards.
+On 26 November 2026, the local Angular production build succeeded and 66 Vitest tests passed on the authentication feature branch. The suite covers authentication, guards, interceptor, employee service and directory, shared confirmation dialogs and dashboard. Supplier-specific tests remain pending.
 
 ## Current source structure
 
 ```text
 src/
 ├── app/
+│   ├── core/auth/                     # Auth store, guards, interceptor, services
 │   ├── features/home/                 # Public landing page
+│   ├── features/auth/login/
+│   ├── features/dashboard/
+│   ├── features/employees/
+│   ├── features/suppliers/
+│   ├── layouts/workspace-layout/
 │   ├── layouts/public-layout/         # Shared public shell
 │   ├── shared/components/
 │   │   ├── navbar/
@@ -106,32 +91,36 @@ Create a draft order, approve it, receive partial or complete deliveries, review
 | /purchase-orders/:id/receive | Record delivery | POST /api/purchase-orders/{id}/receipts |
 | /inventory | Stock and movement history | GET /api/inventory/{sku}; GET /api/stock-movements |
 
-Planned feature folders: `purchase-orders/` and `inventory/`, with feature-local models, API services, components and tests. Shared HTTP problem handling will live in `core/`. Angular HttpClient and a local `/api/**` development proxy to port 8080 are configured. Shared error normalization lives in `core/api-problem.ts`; business API services remain pending. Receipt retries must reuse the original idempotency key and quantities.
+Planned feature folders: `purchase-orders/` and `inventory/`, with feature-local models, API services, components and tests. Shared HTTP problem handling will live in `core/`. Angular HttpClient and a local `/api/**` development proxy to port 8080 are configured. Shared error normalization lives in `core/api-problem.ts`; employee and supplier API services are implemented; procurement services remain pending. Receipt retries must reuse the original idempotency key and quantities.
 
 ## Roadmap
 
 - [x] Angular scaffold and responsive StockFlow homepage
 - [x] Material theme, HTTP client and development proxy
 - [x] Login UI, auth state, guards and protected workspace on `feature/auth-ui`
-- [ ] End-to-end sign-in with the Spring Boot API
+- [x] Local administrator sign-in with Spring Boot API
+- [x] Employee Management UI and tests
+- [x] Supplier Management UI and build
+- [ ] Supplier-specific tests and browser acceptance
 - [ ] Purchase order and inventory screens
 - [ ] API integration and validation/error handling
 - [ ] Feature tests and end-to-end verification
 - [x] Automated Angular CI on `feature/auth-ui`
 - [x] Netlify development preview deployment
-- [ ] Verify deployed API proxy and browser authentication
+- [x] Verify deployed CSRF proxy response
+- [ ] Verify latest cloud browser workflows
 
 ## Documentation
 
 - [Backend repository](https://github.com/AriesMaster/StockPurchaseOrderBackend)
-- [System design](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/main/docs/system-design.md)
-- [API contract](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/main/docs/api-contract.md)
-- [Database design and ERD](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/main/docs/database-design.md)
-- [Technical specification](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/main/docs/technical-specification.md)
-- [Physical DFD](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/main/docs/physical-dfd.md)
+- [System design](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/feature/auth-persistence/docs/system-design.md)
+- [API contract](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/feature/auth-persistence/docs/api-contract.md)
+- [Database design and ERD](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/feature/auth-persistence/docs/database-design.md)
+- [Technical specification](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/feature/auth-persistence/docs/technical-specification.md)
+- [Physical DFD](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/feature/auth-persistence/docs/physical-dfd.md)
 
 See [LICENSE](LICENSE).
 
 ## Cloud deployment
 
-Netlify builds `feature/auth-ui` with Node 26.13.0 and `npm run build`, publishing `dist/stock-purchase-order-frontend/browser`. The feature branch `netlify.toml` proxies `/api/*` to Render before the SPA fallback. No database credentials or JWT signing secrets belong in the frontend. The published preview is not a completed authentication workflow.
+Netlify builds `feature/auth-ui` with Node 26.13.0 and `npm run build`, publishing `dist/stock-purchase-order-frontend/browser`. The feature branch `netlify.toml` proxies `/api/*` to Render before the SPA fallback. No database credentials or JWT signing secrets belong in the frontend. The published preview is not a completed procurement system; latest cloud workflows require verification.
