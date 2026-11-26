@@ -7,7 +7,7 @@ import { finalize, timeout } from 'rxjs';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { Breadcrumbs } from '../../shared/components/breadcrumbs/breadcrumbs';
 import { EmployeeService } from './services/employee.service';
-import { EmployeePage, EmployeeRole } from './models/employee.models';
+import { Employee, EmployeePage, EmployeeRole } from './models/employee.models';
 
 @Component({
   selector: 'app-employee-directory',
@@ -34,14 +34,27 @@ import { EmployeePage, EmployeeRole } from './models/employee.models';
     </section>
     <section class="surface-card directory" aria-label="Employee directory" [attr.aria-busy]="loading()">
       <div class="toolbar"><h2>Employee directory</h2><button type="button" [disabled]="loading() || saving()" (click)="load(page()?.number ?? 0)">Refresh</button></div>
+      @if (editError()) { <p role="alert">{{ editError() }}</p> }
+      @if (editing(); as employee) {
+        <div class="edit-panel">
+          <h2>Change role for {{ employee.email }}</h2>
+          <label>New role<select [formControl]="roleControl">
+            <option value="PURCHASING_OFFICER">Purchasing Officer</option>
+            <option value="APPROVER">Approver</option>
+            <option value="WAREHOUSE_OFFICER">Warehouse Officer</option>
+          </select></label>
+          <p>Changing permissions signs the employee out of existing sessions.</p>
+          <div class="controls"><button class="primary" type="button" [disabled]="saving() || loading() || roleControl.value === employee.role" (click)="saveRole(employee)">Save role</button><button type="button" [disabled]="saving()" (click)="editing.set(null)">Cancel</button></div>
+        </div>
+      }
       @if (loading()) { <p role="status">Loading employees…</p> }
       @if (error()) { <p role="alert">{{ error() }}</p> }
       @if (page(); as data) {
         @if (data.content.length) {
           <div class="table-scroll" tabindex="0" aria-label="Employee records">
-            <table><thead><tr><th scope="col">Email</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col">Created</th></tr></thead>
+            <table><thead><tr><th scope="col">Email</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col">Created</th><th scope="col">Actions</th></tr></thead>
               <tbody>@for (employee of data.content; track employee.id) {
-                <tr><td>{{ employee.email }}</td><td>{{ roleLabels[employee.role] }}</td><td><span class="status" [class.inactive]="!employee.enabled">{{ employee.enabled ? 'Active' : 'Inactive' }}</span></td><td>{{ employee.createdAt | date:'mediumDate' }}</td></tr>
+                <tr><td>{{ employee.email }}</td><td>{{ roleLabels[employee.role] }}</td><td><span class="status" [class.inactive]="!employee.enabled">{{ employee.enabled ? 'Active' : 'Inactive' }}</span></td><td>{{ employee.createdAt | date:'mediumDate' }}</td><td>@if (employee.role !== 'ADMIN') { <button type="button" [disabled]="saving() || loading() || creating()" (click)="editRole(employee)">Edit role</button> } @else { <small>Protected</small> }</td></tr>
               }</tbody>
             </table>
           </div>
@@ -54,6 +67,7 @@ import { EmployeePage, EmployeeRole } from './models/employee.models';
     </section>
   `,
   styles: [`
+    .edit-panel { display:grid; gap:12px; padding:16px; margin-bottom:16px; border:1px solid var(--border-color); border-radius:8px; }
     .fields { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:16px; margin-bottom:16px; }
     label { display:flex; flex-direction:column; gap:6px; font-size:.9rem; font-weight:600; }
     input,select { width:100%; padding:10px; border:1px solid #aaa; border-radius:8px; background:white; color:#111; }
@@ -79,6 +93,32 @@ export class EmployeeDirectory {
   private readonly employees = inject(EmployeeService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly fb = inject(FormBuilder);
+  readonly editing = signal<Employee | null>(null);
+  readonly editError = signal('');
+  readonly roleControl = this.fb.nonNullable.control<EmployeeRole>('PURCHASING_OFFICER');
+  editRole(employee: Employee): void {
+    if (employee.role === 'ADMIN' || this.saving() || this.loading() || this.creating()) return;
+    this.editError.set('');
+    this.notice.set('');
+    this.roleControl.setValue(employee.role);
+    this.editing.set(employee);
+  }
+  saveRole(employee: Employee): void {
+    if (employee.role === 'ADMIN' || this.saving() || this.loading() || this.roleControl.value === employee.role) return;
+    this.saving.set(true);
+    this.editError.set('');
+    this.employees.changeRole(employee.id, this.roleControl.value).pipe(
+      timeout(30000), takeUntilDestroyed(this.destroyRef),
+      finalize(() => this.saving.set(false))
+    ).subscribe({
+      next: () => {
+        this.editing.set(null);
+        this.notice.set('Employee role updated successfully.');
+        this.load(this.page()?.number ?? 0);
+      },
+      error: () => this.editError.set('Unable to confirm role change. Refresh the directory before retrying.')
+    });
+  }
   readonly creating = signal(false);
   readonly saving = signal(false);
   readonly createError = signal('');
@@ -90,6 +130,8 @@ export class EmployeeDirectory {
   });
   toggleCreate(): void {
     if (this.saving()) return;
+    this.editing.set(null);
+    this.editError.set('');
     this.creating.update(value => !value);
     this.form.reset();
     this.createError.set('');
@@ -127,6 +169,7 @@ export class EmployeeDirectory {
   constructor() { this.load(0); }
   load(number: number): void {
     if (this.loading() || number < 0) return;
+    this.editing.set(null);
     this.loading.set(true);
     this.error.set('');
     this.employees.list(number).pipe(timeout(30000), takeUntilDestroyed(this.destroyRef),
