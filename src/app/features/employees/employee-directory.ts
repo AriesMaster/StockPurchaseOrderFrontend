@@ -1,6 +1,8 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { ConfirmationDialog, ConfirmationData } from '../../shared/components/confirmation-dialog/confirmation-dialog';
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize, timeout } from 'rxjs';
@@ -11,7 +13,7 @@ import { Employee, EmployeePage, EmployeeRole } from './models/employee.models';
 
 @Component({
   selector: 'app-employee-directory',
-  imports: [ReactiveFormsModule, DatePipe, PageHeader, Breadcrumbs],
+  imports: [MatDialogModule, ReactiveFormsModule, DatePipe, PageHeader, Breadcrumbs],
   template: `
     <app-breadcrumbs [items]="[{label: 'Workspace'}, {label: 'Employees'}]" />
     <app-page-header title="Employees" description="View employee accounts and their access to StockFlow." />
@@ -35,16 +37,6 @@ import { Employee, EmployeePage, EmployeeRole } from './models/employee.models';
     <section class="surface-card directory" aria-label="Employee directory" [attr.aria-busy]="loading()">
       <div class="toolbar"><h2>Employee directory</h2><button type="button" [disabled]="loading() || saving()" (click)="load(page()?.number ?? 0)">Refresh</button></div>
       @if (editError()) { <p role="alert">{{ editError() }}</p> }
-      @if (statusTarget(); as employee) {
-        <div class="edit-panel" role="group" aria-label="Confirm account status change">
-          <h2>{{ employee.enabled ? 'Deactivate' : 'Reactivate' }} {{ employee.email }}?</h2>
-          <p>{{ employee.enabled ? 'This will revoke existing sessions and prevent sign-in.' : 'This will restore sign-in access with the existing password.' }}</p>
-          <div class="controls">
-            <button class="primary" type="button" [disabled]="saving() || loading()" (click)="confirmStatus()">{{ saving() ? 'Saving…' : employee.enabled ? 'Confirm deactivation' : 'Confirm reactivation' }}</button>
-            <button type="button" [disabled]="saving()" (click)="statusTarget.set(null)">Cancel</button>
-          </div>
-        </div>
-      }
       @if (editing(); as employee) {
         <div class="edit-panel">
           <h2>Change role for {{ employee.email }}</h2>
@@ -54,7 +46,7 @@ import { Employee, EmployeePage, EmployeeRole } from './models/employee.models';
             <option value="WAREHOUSE_OFFICER">Warehouse Officer</option>
           </select></label>
           <p>Changing permissions signs the employee out of existing sessions.</p>
-          <div class="controls"><button class="primary" type="button" [disabled]="saving() || loading() || roleControl.value === employee.role" (click)="saveRole(employee)">Save role</button><button type="button" [disabled]="saving()" (click)="editing.set(null)">Cancel</button></div>
+          <div class="controls"><button class="primary" type="button" [disabled]="saving() || loading() || roleControl.value === employee.role" (click)="requestRoleChange(employee)">Save role</button><button type="button" [disabled]="saving()" (click)="editing.set(null)">Cancel</button></div>
         </div>
       }
       @if (loading()) { <p role="status">Loading employees…</p> }
@@ -64,7 +56,7 @@ import { Employee, EmployeePage, EmployeeRole } from './models/employee.models';
           <div class="table-scroll" tabindex="0" aria-label="Employee records">
             <table><thead><tr><th scope="col">Email</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col">Created</th><th scope="col">Actions</th></tr></thead>
               <tbody>@for (employee of data.content; track employee.id) {
-                <tr><td>{{ employee.email }}</td><td>{{ roleLabels[employee.role] }}</td><td><span class="status" [class.inactive]="!employee.enabled">{{ employee.enabled ? 'Active' : 'Inactive' }}</span></td><td>{{ employee.createdAt | date:'mediumDate' }}</td><td>@if (employee.role !== 'ADMIN') { <button type="button" [disabled]="saving() || loading() || creating()" (click)="editRole(employee)">Edit role</button> <button type="button" [disabled]="saving() || loading() || creating()" (click)="requestStatus(employee)">{{ employee.enabled ? 'Deactivate' : 'Reactivate' }}</button> } @else { <small>Protected</small> }</td></tr>
+                <tr><td>{{ employee.email }}</td><td>{{ roleLabels[employee.role] }}</td><td><span class="status" [class.inactive]="!employee.enabled">{{ employee.enabled ? 'Active' : 'Inactive' }}</span></td><td>{{ employee.createdAt | date:'mediumDate' }}</td><td><div class="row-actions">@if (employee.role !== 'ADMIN') { <button type="button" [disabled]="saving() || loading() || creating()" (click)="editRole(employee)">Edit role</button> <button type="button" [disabled]="saving() || loading() || creating()" (click)="requestStatus(employee)">{{ employee.enabled ? 'Deactivate' : 'Reactivate' }}</button> } @else { <small>Protected</small> }</div></td></tr>
               }</tbody>
             </table>
           </div>
@@ -77,6 +69,7 @@ import { Employee, EmployeePage, EmployeeRole } from './models/employee.models';
     </section>
   `,
   styles: [`
+    .row-actions { display:flex; gap:8px; flex-wrap:wrap; }
     .edit-panel { display:grid; gap:12px; padding:16px; margin-bottom:16px; border:1px solid var(--border-color); border-radius:8px; }
     .fields { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:16px; margin-bottom:16px; }
     label { display:flex; flex-direction:column; gap:6px; font-size:.9rem; font-weight:600; }
@@ -103,16 +96,26 @@ export class EmployeeDirectory {
   private readonly employees = inject(EmployeeService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly fb = inject(FormBuilder);
-  readonly statusTarget = signal<Employee | null>(null);
+  private readonly dialog = inject(MatDialog);
+  private confirm(data: ConfirmationData, action: () => void): void {
+    this.dialog.open<ConfirmationDialog, ConfirmationData, boolean>(ConfirmationDialog, {
+      data, width: '440px', maxWidth: '92vw', autoFocus: 'first-tabbable', restoreFocus: true
+    }).afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(result => {
+      if (result === true) action();
+    });
+  }
   requestStatus(employee: Employee): void {
     if (employee.role === 'ADMIN' || this.saving() || this.loading() || this.creating()) return;
     this.editing.set(null);
     this.editError.set('');
     this.notice.set('');
-    this.statusTarget.set(employee);
+    this.confirm({
+      title: (employee.enabled ? 'Deactivate ' : 'Reactivate ') + employee.email + '?',
+      description: employee.enabled ? 'This will revoke existing sessions and prevent sign-in.' : 'This will restore sign-in access with the existing password.',
+      confirmLabel: employee.enabled ? 'Deactivate' : 'Reactivate'
+    }, () => this.confirmStatus(employee));
   }
-  confirmStatus(): void {
-    const employee = this.statusTarget();
+  private confirmStatus(employee: Employee): void {
     if (!employee || employee.role === 'ADMIN' || this.saving() || this.loading()) return;
     const enabled = !employee.enabled;
     this.saving.set(true);
@@ -122,12 +125,10 @@ export class EmployeeDirectory {
       finalize(() => this.saving.set(false))
     ).subscribe({
       next: () => {
-        this.statusTarget.set(null);
         this.notice.set(enabled ? 'Employee account reactivated.' : 'Employee account deactivated.');
         this.load(this.page()?.number ?? 0);
       },
       error: () => {
-        this.statusTarget.set(null);
         this.editError.set('Unable to confirm status change. Refresh the directory before retrying.');
       }
     });
@@ -139,15 +140,23 @@ export class EmployeeDirectory {
     if (employee.role === 'ADMIN' || this.saving() || this.loading() || this.creating()) return;
     this.editError.set('');
     this.notice.set('');
-    this.statusTarget.set(null);
     this.roleControl.setValue(employee.role);
     this.editing.set(employee);
   }
-  saveRole(employee: Employee): void {
-    if (employee.role === 'ADMIN' || this.saving() || this.loading() || this.roleControl.value === employee.role) return;
+  requestRoleChange(employee: Employee): void {
+    const role = this.roleControl.value;
+    if (employee.role === 'ADMIN' || this.saving() || this.loading() || role === employee.role) return;
+    this.confirm({
+      title: 'Change employee role?',
+      description: employee.email + ' will become ' + this.roleLabels[role] + '. Existing sessions will be revoked.',
+      confirmLabel: 'Save role'
+    }, () => this.saveRole(employee, role));
+  }
+  private saveRole(employee: Employee, role: EmployeeRole): void {
+    if (employee.role === 'ADMIN' || this.saving() || this.loading() || role === employee.role) return;
     this.saving.set(true);
     this.editError.set('');
-    this.employees.changeRole(employee.id, this.roleControl.value).pipe(
+    this.employees.changeRole(employee.id, role).pipe(
       timeout(30000), takeUntilDestroyed(this.destroyRef),
       finalize(() => this.saving.set(false))
     ).subscribe({
@@ -172,7 +181,6 @@ export class EmployeeDirectory {
     if (this.saving()) return;
     this.editing.set(null);
     this.editError.set('');
-    this.statusTarget.set(null);
     this.creating.update(value => !value);
     this.form.reset();
     this.createError.set('');
@@ -211,7 +219,6 @@ export class EmployeeDirectory {
   load(number: number): void {
     if (this.loading() || number < 0) return;
     this.editing.set(null);
-    this.statusTarget.set(null);
     this.editError.set('');
     this.loading.set(true);
     this.error.set('');
