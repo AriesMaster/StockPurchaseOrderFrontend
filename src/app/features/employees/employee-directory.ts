@@ -35,6 +35,16 @@ import { Employee, EmployeePage, EmployeeRole } from './models/employee.models';
     <section class="surface-card directory" aria-label="Employee directory" [attr.aria-busy]="loading()">
       <div class="toolbar"><h2>Employee directory</h2><button type="button" [disabled]="loading() || saving()" (click)="load(page()?.number ?? 0)">Refresh</button></div>
       @if (editError()) { <p role="alert">{{ editError() }}</p> }
+      @if (statusTarget(); as employee) {
+        <div class="edit-panel" role="group" aria-label="Confirm account status change">
+          <h2>{{ employee.enabled ? 'Deactivate' : 'Reactivate' }} {{ employee.email }}?</h2>
+          <p>{{ employee.enabled ? 'This will revoke existing sessions and prevent sign-in.' : 'This will restore sign-in access with the existing password.' }}</p>
+          <div class="controls">
+            <button class="primary" type="button" [disabled]="saving() || loading()" (click)="confirmStatus()">{{ saving() ? 'Saving…' : employee.enabled ? 'Confirm deactivation' : 'Confirm reactivation' }}</button>
+            <button type="button" [disabled]="saving()" (click)="statusTarget.set(null)">Cancel</button>
+          </div>
+        </div>
+      }
       @if (editing(); as employee) {
         <div class="edit-panel">
           <h2>Change role for {{ employee.email }}</h2>
@@ -54,14 +64,14 @@ import { Employee, EmployeePage, EmployeeRole } from './models/employee.models';
           <div class="table-scroll" tabindex="0" aria-label="Employee records">
             <table><thead><tr><th scope="col">Email</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col">Created</th><th scope="col">Actions</th></tr></thead>
               <tbody>@for (employee of data.content; track employee.id) {
-                <tr><td>{{ employee.email }}</td><td>{{ roleLabels[employee.role] }}</td><td><span class="status" [class.inactive]="!employee.enabled">{{ employee.enabled ? 'Active' : 'Inactive' }}</span></td><td>{{ employee.createdAt | date:'mediumDate' }}</td><td>@if (employee.role !== 'ADMIN') { <button type="button" [disabled]="saving() || loading() || creating()" (click)="editRole(employee)">Edit role</button> } @else { <small>Protected</small> }</td></tr>
+                <tr><td>{{ employee.email }}</td><td>{{ roleLabels[employee.role] }}</td><td><span class="status" [class.inactive]="!employee.enabled">{{ employee.enabled ? 'Active' : 'Inactive' }}</span></td><td>{{ employee.createdAt | date:'mediumDate' }}</td><td>@if (employee.role !== 'ADMIN') { <button type="button" [disabled]="saving() || loading() || creating()" (click)="editRole(employee)">Edit role</button> <button type="button" [disabled]="saving() || loading() || creating()" (click)="requestStatus(employee)">{{ employee.enabled ? 'Deactivate' : 'Reactivate' }}</button> } @else { <small>Protected</small> }</td></tr>
               }</tbody>
             </table>
           </div>
         } @else { <p>No employees found.</p> }
         <div class="toolbar pagination">
           <span>{{ data.totalElements }} {{ data.totalElements === 1 ? 'employee' : 'employees' }} · Page {{ data.totalPages ? data.number + 1 : 0 }} of {{ data.totalPages }}</span>
-          <div class="controls"><button type="button" [disabled]="loading() || saving() || data.number === 0" (click)="load(data.number - 1)">Previous</button><button type="button" [disabled]="loading() || data.number + 1 >= data.totalPages" (click)="load(data.number + 1)">Next</button></div>
+          <div class="controls"><button type="button" [disabled]="loading() || saving() || data.number === 0" (click)="load(data.number - 1)">Previous</button><button type="button" [disabled]="loading() || saving() || data.number + 1 >= data.totalPages" (click)="load(data.number + 1)">Next</button></div>
         </div>
       }
     </section>
@@ -93,6 +103,35 @@ export class EmployeeDirectory {
   private readonly employees = inject(EmployeeService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly fb = inject(FormBuilder);
+  readonly statusTarget = signal<Employee | null>(null);
+  requestStatus(employee: Employee): void {
+    if (employee.role === 'ADMIN' || this.saving() || this.loading() || this.creating()) return;
+    this.editing.set(null);
+    this.editError.set('');
+    this.notice.set('');
+    this.statusTarget.set(employee);
+  }
+  confirmStatus(): void {
+    const employee = this.statusTarget();
+    if (!employee || employee.role === 'ADMIN' || this.saving() || this.loading()) return;
+    const enabled = !employee.enabled;
+    this.saving.set(true);
+    this.editError.set('');
+    this.employees.changeStatus(employee.id, enabled).pipe(
+      timeout(30000), takeUntilDestroyed(this.destroyRef),
+      finalize(() => this.saving.set(false))
+    ).subscribe({
+      next: () => {
+        this.statusTarget.set(null);
+        this.notice.set(enabled ? 'Employee account reactivated.' : 'Employee account deactivated.');
+        this.load(this.page()?.number ?? 0);
+      },
+      error: () => {
+        this.statusTarget.set(null);
+        this.editError.set('Unable to confirm status change. Refresh the directory before retrying.');
+      }
+    });
+  }
   readonly editing = signal<Employee | null>(null);
   readonly editError = signal('');
   readonly roleControl = this.fb.nonNullable.control<EmployeeRole>('PURCHASING_OFFICER');
@@ -100,6 +139,7 @@ export class EmployeeDirectory {
     if (employee.role === 'ADMIN' || this.saving() || this.loading() || this.creating()) return;
     this.editError.set('');
     this.notice.set('');
+    this.statusTarget.set(null);
     this.roleControl.setValue(employee.role);
     this.editing.set(employee);
   }
@@ -132,6 +172,7 @@ export class EmployeeDirectory {
     if (this.saving()) return;
     this.editing.set(null);
     this.editError.set('');
+    this.statusTarget.set(null);
     this.creating.update(value => !value);
     this.form.reset();
     this.createError.set('');
@@ -170,6 +211,8 @@ export class EmployeeDirectory {
   load(number: number): void {
     if (this.loading() || number < 0) return;
     this.editing.set(null);
+    this.statusTarget.set(null);
+    this.editError.set('');
     this.loading.set(true);
     this.error.set('');
     this.employees.list(number).pipe(timeout(30000), takeUntilDestroyed(this.destroyRef),
