@@ -2,6 +2,10 @@ import { Component, computed, inject } from '@angular/core';
 import { AuthStore } from '../../core/auth/services/auth.store';
 import { InfoTooltip } from '../../shared/components/info-tooltip/info-tooltip';
 
+import { PageHeader } from '../../shared/components/page-header/page-header';
+import { Breadcrumbs } from '../../shared/components/breadcrumbs/breadcrumbs';
+import { EmptyState } from '../../shared/components/empty-state/empty-state';
+
 const metrics = {
   orders: { label: 'Purchase orders', description: 'Orders placed with suppliers to purchase products.' },
   approvals: { label: 'Pending approvals', description: 'Orders that need review before goods can be received.' },
@@ -13,11 +17,10 @@ const metrics = {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [InfoTooltip],
+  imports: [InfoTooltip, PageHeader, Breadcrumbs, EmptyState],
   template: `
-    <p class="eyebrow">STOCKFLOW / OVERVIEW</p>
-    <h1>{{ heading() }}</h1>
-    <p>{{ introduction() }}</p>
+    <app-breadcrumbs [items]="[{label: 'Workspace'}, {label: 'Overview'}]" />
+    <app-page-header [title]="heading()" [description]="introduction()" />
     <div class="metrics">
       @for (metric of visibleMetrics(); track metric.label) {
         <article class="surface-card">
@@ -26,7 +29,7 @@ const metrics = {
         </article>
       }
     </div>
-    <section class="surface-card"><h2>Your next steps</h2><p>{{ guidance() }}</p><p>Business modules are currently being developed. Live records will appear when the APIs are connected.</p></section>
+    <app-empty-state title="Live activity is not available yet" description="Business modules are currently being developed. Live records will appear when the APIs are connected." />
   `,
   styles: [`
     .eyebrow { font-size:.75rem; letter-spacing:.1em; }
