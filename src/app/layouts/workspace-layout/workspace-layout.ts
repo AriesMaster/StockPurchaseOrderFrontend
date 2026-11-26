@@ -1,5 +1,7 @@
 import { Component, inject, signal, computed } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { switchMap, finalize, timeout } from 'rxjs';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthStore } from '../../core/auth/services/auth.store';
 
@@ -11,6 +13,27 @@ import { AuthStore } from '../../core/auth/services/auth.store';
 })
 export class WorkspaceLayout {
   readonly auth = inject(AuthStore);
+  private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
+  readonly signingOut = signal(false);
+  readonly logoutError = signal('');
+
+  logout(): void {
+    if (this.signingOut()) return;
+    this.signingOut.set(true);
+    this.logoutError.set('');
+    this.http.get<void>('/api/auth/csrf').pipe(
+      switchMap(() => this.http.post<void>('/api/auth/logout', {})),
+      timeout(30000),
+      finalize(() => this.signingOut.set(false))
+    ).subscribe({
+      next: () => {
+        this.auth.clear();
+        void this.router.navigateByUrl('/login', { replaceUrl: true });
+      },
+      error: () => this.logoutError.set('Sign out failed. Please try again.')
+    });
+  }
   readonly open = signal(false);
   readonly helpOpen = signal(false);
   readonly roleLabel = computed(() => ({
