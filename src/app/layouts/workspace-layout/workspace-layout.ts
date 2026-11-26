@@ -43,7 +43,6 @@ export class WorkspaceLayout {
   readonly modules = computed(() => {
     const role = this.auth.role();
     return [
-      ...(role === 'ADMIN' ? ['Employees'] : []),
       'Purchase orders',
       ...(role === 'ADMIN' || role === 'PURCHASING_OFFICER' ? ['Suppliers', 'Products'] : []),
       ...(role === 'ADMIN' || role === 'APPROVER' ? ['Approvals'] : []),
