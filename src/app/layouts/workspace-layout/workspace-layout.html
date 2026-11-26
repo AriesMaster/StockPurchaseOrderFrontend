@@ -1,16 +1,36 @@
 <div class="workspace">
-  <header><a routerLink="/dashboard" class="brand">SF · StockFlow.</a><button type="button" (click)="open.update(v => !v)" [attr.aria-expanded]="open()" aria-controls="workspace-nav">Menu</button><span>{{ auth.user()?.email }}</span></header>
+  <a class="skip-link" href="#workspace-content">Skip to content</a>
+  <header>
+    <div class="header-start">
+      <button class="menu-button" type="button" (click)="toggleMenu()" [attr.aria-expanded]="open()" aria-controls="workspace-nav">Menu</button>
+      <a routerLink="/dashboard" class="brand">StockFlow.</a>
+    </div>
+    <div class="header-end">
+      <button type="button" class="help-button" (click)="toggleHelp()" [attr.aria-expanded]="helpOpen()" aria-controls="workspace-help" matTooltip="Learn how to use your workspace">? <span>Help</span></button>
+      <div class="identity"><strong>{{ roleLabel() }}</strong><small>{{ auth.user()?.email }}</small></div>
+    </div>
+  </header>
   <aside id="workspace-nav" [class.open]="open()">
-    <p class="label">WORKSPACE</p>
+    <p class="label">Workspace</p>
     <nav aria-label="Workspace navigation">
-      <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" (click)="open.set(false)">Overview</a>
+      <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{exact:true}" (click)="open.set(false)">Overview</a>
     </nav>
-    <p class="label">PLANNED MODULES</p>
-    <span>Purchase orders</span><span>Products &amp; suppliers</span><span>Inventory</span>
-    @if (auth.role() === 'ADMIN' || auth.role() === 'APPROVER') { <span>Approvals</span> }
-    @if (auth.role() === 'ADMIN' || auth.role() === 'WAREHOUSE_OFFICER') { <span>Deliveries</span> }
-    @if (auth.role() === 'ADMIN') { <span>User management</span> }
-    <div class="profile"><strong>{{ roleLabel() }}</strong><small>StockFlow workspace</small></div>
+    <p class="label">Coming soon</p>
+    <p class="hint">These modules are being developed.</p>
+    @for (module of modules(); track module) {
+      <span class="planned">{{ module }} <small>Planned</small></span>
+    }
+    <div class="sidebar-bottom">
+      <button type="button" (click)="toggleHelp()" [attr.aria-expanded]="helpOpen()" aria-controls="workspace-help">Help &amp; support</button>
+    </div>
   </aside>
-  <main><router-outlet /></main>
+  <main id="workspace-content" tabindex="-1">
+    <section id="workspace-help" class="help-panel" [hidden]="!helpOpen()" aria-labelledby="help-title">
+      <div class="help-heading"><h2 id="help-title">Using StockFlow</h2><button type="button" (click)="helpOpen.set(false)">Close</button></div>
+      <p>Start with Overview. Your workspace shows the modules relevant to your role. Modules marked Planned are not available yet.</p>
+      <p>Look for information icons beside unfamiliar terms. They explain what a field or action means.</p>
+    </section>
+    <router-outlet />
+  </main>
+  <footer><span>© 2026 StockFlow</span><span>Development preview</span><button type="button" (click)="toggleHelp()" [attr.aria-expanded]="helpOpen()" aria-controls="workspace-help">Help &amp; support</button></footer>
 </div>
