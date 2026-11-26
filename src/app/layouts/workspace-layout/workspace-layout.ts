@@ -44,7 +44,7 @@ export class WorkspaceLayout {
     const role = this.auth.role();
     return [
       'Purchase orders',
-      ...(role === 'ADMIN' || role === 'PURCHASING_OFFICER' ? ['Suppliers', 'Products'] : []),
+      ...(role === 'ADMIN' || role === 'PURCHASING_OFFICER' ? ['Products'] : []),
       ...(role === 'ADMIN' || role === 'APPROVER' ? ['Approvals'] : []),
       ...(role === 'ADMIN' || role === 'WAREHOUSE_OFFICER' ? ['Deliveries'] : []),
       'Inventory'
