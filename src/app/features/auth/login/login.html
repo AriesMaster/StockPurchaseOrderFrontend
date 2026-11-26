@@ -18,10 +18,9 @@
       @if (form.controls.password.touched && form.controls.password.invalid) {
         <p class="error">Enter your password.</p>
       }
-      <button class="btn btn-primary submit" type="submit">Sign in</button>
+      <button class="btn btn-primary submit" type="submit" [disabled]="pending()">{{ pending() ? 'Signing in…' : 'Sign in' }}</button>
       @if (message()) { <p role="status">{{ message() }}</p> }
     </form>
     <p class="note">Access is by invitation only. Contact your administrator for an account.</p>
-    <p class="note">Preview — authentication API not connected.</p>
   </div>
 </section>
