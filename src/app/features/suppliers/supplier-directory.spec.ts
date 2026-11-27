@@ -10,7 +10,7 @@ import { Supplier, SupplierPage } from './models/supplier.models';
 
 describe('SupplierDirectory', () => {
   const supplier: Supplier = { id: 1, name: 'Midrand Hardware', contactName: 'Test Contact', email: 'sales@example.test', phone: '0115550101', address: 'Gauteng', active: true, createdAt: '2026-11-26T00:00:00Z', updatedAt: '2026-11-26T00:00:00Z' };
-  const page: SupplierPage = { content: [supplier], number: 0, size: 20, totalElements: 21, totalPages: 2 };
+  const page: SupplierPage = { content: [supplier], number: 0, size: 10, totalElements: 21, totalPages: 3 };
   const role = signal('ADMIN');
   const api = { list: vi.fn(), create: vi.fn(), update: vi.fn(), changeStatus: vi.fn() };
   const dialog = { open: vi.fn() };
@@ -37,7 +37,7 @@ describe('SupplierDirectory', () => {
   });
 
   it('loads the first page on initialization', () => {
-    expect(api.list).toHaveBeenCalledWith(0, 20, '');
+    expect(api.list).toHaveBeenCalledWith(0, 10, '');
     expect(component.page()).toEqual(page);
   });
   it('submits search without native browser navigation', () => {
@@ -46,20 +46,30 @@ describe('SupplierDirectory', () => {
     const event = new Event('submit', { bubbles: true, cancelable: true });
     form.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
-    expect(api.list).toHaveBeenLastCalledWith(0, 20, 'Midrand');
+    expect(api.list).toHaveBeenLastCalledWith(0, 10, 'Midrand');
   });
   it('preserves the applied search when changing page', () => {
     component.query.setValue('Midrand');
     component.search();
     component.load(1);
-    expect(api.list).toHaveBeenLastCalledWith(1, 20, 'Midrand');
+    expect(api.list).toHaveBeenLastCalledWith(1, 10, 'Midrand');
   });
   it('clears search and returns to page zero', () => {
     component.query.setValue('Midrand');
     component.search();
     component.query.reset();
     component.search();
-    expect(api.list).toHaveBeenLastCalledWith(0, 20, '');
+    expect(api.list).toHaveBeenLastCalledWith(0, 10, '');
+  });
+  it('filters active and inactive suppliers server-side and resets pagination', () => {
+    component.changeStatusFilter('inactive');
+    expect(api.list).toHaveBeenLastCalledWith(0, 10, '', false);
+    component.changeStatusFilter('active');
+    expect(api.list).toHaveBeenLastCalledWith(0, 10, '', true);
+    component.changePageSize('50');
+    expect(api.list).toHaveBeenLastCalledWith(0, 50, '', true);
+    component.clearFilters();
+    expect(api.list).toHaveBeenLastCalledWith(0, 50, '');
   });
   it('renders the empty result message', () => {
     api.list.mockReturnValue(of({ ...page, content: [], totalElements: 0, totalPages: 0 }));

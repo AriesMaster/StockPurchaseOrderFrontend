@@ -41,14 +41,14 @@ import { Product, ProductPage } from './models/product.models';
  @if(notice()){<p class="feedback success" role="status">{{notice()}}</p>}
  @if(error() && !formOpen()){<p class="feedback failure" role="alert">{{error()}}</p>}
  <form class="toolbar search" (submit)="$event.preventDefault(); search()"><label>Search by name or SKU<input [formControl]="query" maxlength="150" placeholder="Search products…" /></label>
- <div class="controls"><button type="submit" [disabled]="busy()">Search</button><button type="button" [disabled]="busy()" (click)="query.reset(); search()">Clear</button><button type="button" [disabled]="busy()" (click)="load(page()?.number ?? 0)">Refresh</button></div></form>
+ <label class="filter-label">Status<select #statusSelect [value]="statusFilter()" [disabled]="busy()" (change)="changeStatusFilter(statusSelect.value)"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></label><div class="controls"><button type="submit" [disabled]="busy()">Search</button><button type="button" [disabled]="busy()" (click)="clearFilters()">Clear</button><button type="button" [disabled]="busy()" (click)="load(page()?.number ?? 0)">Refresh</button></div></form>
  @if(loading()){<p role="status">Loading products…</p>}
  @if(page(); as data){
  @if(data.content.length){<div class="table-scroll" tabindex="0"><table><thead><tr><th>SKU</th><th>Product name</th><th>Unit price</th><th>Status</th>@if(auth.role()==='ADMIN'){<th>Actions</th>}</tr></thead><tbody>
- @for(product of data.content; track product.sku){<tr><td>{{product.sku}}</td><td class="product-name">{{product.name}}</td><td class="price">{{product.unitPrice | currency:'ZAR':'symbol':'1.2-2'}}</td><td><span class="status" [class.inactive]="!product.active">{{product.active?'Active':'Inactive'}}</span></td>
+ @for(product of data.content; track product.sku){<tr><td>{{product.sku}}</td><td class="product-name">{{product.name}}</td><td class="price">{{product.unitPrice | currency:'ZAR':'R':'1.2-2'}}</td><td><span class="status" [class.inactive]="!product.active">{{product.active?'Active':'Inactive'}}</span></td>
  @if(auth.role()==='ADMIN'){<td><div class="row-actions"><button type="button" [disabled]="busy() || formOpen()" (click)="openForm(product)">Edit</button><button type="button" [disabled]="busy() || formOpen()" (click)="requestStatus(product)">{{product.active?'Deactivate':'Reactivate'}}</button></div></td>}</tr>}
  </tbody></table></div>}@else{<div class="empty"><strong>No products found</strong><p>Try another search or ask an administrator to add a product.</p></div>}
- <div class="toolbar pagination"><span>{{data.totalElements}} {{data.totalElements === 1 ? 'product' : 'products'}} · Page {{data.totalPages ? data.number+1 : 0}} of {{data.totalPages}}</span><div class="controls"><button type="button" [disabled]="busy() || data.number===0" (click)="load(data.number-1)">Previous</button><button type="button" [disabled]="busy() || data.number+1>=data.totalPages" (click)="load(data.number+1)">Next</button></div></div>}
+ <div class="toolbar pagination"><span>{{data.totalElements}} {{data.totalElements === 1 ? 'product' : 'products'}} · Page {{data.totalPages ? data.number+1 : 0}} of {{data.totalPages}}</span><div class="controls"><label class="page-size">Rows per page<select #sizeSelect [value]="pageSize()" [disabled]="busy()" (change)="changePageSize(sizeSelect.value)"><option value="10">10</option><option value="20">20</option><option value="50">50</option></select></label><button type="button" [disabled]="busy() || data.number===0" (click)="load(data.number-1)">Previous</button><button type="button" [disabled]="busy() || data.number+1>=data.totalPages" (click)="load(data.number+1)">Next</button></div></div>}
  </section>`,
  styles:[`
  :host{display:block;min-width:0}
@@ -61,22 +61,22 @@ import { Product, ProductPage } from './models/product.models';
  .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:16px 0}
  .price{font-variant-numeric:tabular-nums;white-space:nowrap}input:disabled{background:#eee;color:#555} .field-error{font-weight:400;font-size:.78rem;color:#9b2222}
  label{display:flex;flex-direction:column;gap:6px;font-size:.85rem;font-weight:600;min-width:0}
- input,textarea{box-sizing:border-box;width:100%;padding:10px 12px;border:1px solid #bbb;border-radius:8px;background:white;color:#111;font:inherit;font-weight:400}
- input:focus,textarea:focus{outline:2px solid #333;outline-offset:2px}
+ input,textarea,select{box-sizing:border-box;width:100%;padding:10px 12px;border:1px solid #bbb;border-radius:8px;background:white;color:#111;font:inherit;font-weight:400}
+ input:focus,textarea:focus,select:focus{outline:2px solid #333;outline-offset:2px}
  button{background:white;color:#111;border:1px solid #bbb;border-radius:8px;padding:8px 12px;cursor:pointer;font:inherit;font-size:.85rem;white-space:nowrap}
  button:hover:not(:disabled){background:#eee}button.primary{background:#111;color:white;border-color:#111}button.primary:hover:not(:disabled){background:#333}button:disabled{opacity:.45;cursor:default}
  .search{justify-content:flex-start;align-items:end;margin:0 0 20px}.search label{flex:1 1 220px;max-width:340px}
  .table-scroll{overflow-x:auto;max-width:100%;border:1px solid #e2e2e2;border-radius:10px}
  table{width:100%;border-collapse:collapse;text-align:left;font-size:.82rem;table-layout:auto}
- th,td{height:auto;padding:12px 10px;border-bottom:1px solid #e5e5e5;vertical-align:middle;white-space:normal;overflow-wrap:anywhere}
+ th,td{height:auto;padding:10px 12px;border-bottom:1px solid #e5e5e5;vertical-align:middle;white-space:normal;overflow-wrap:anywhere}
  th{background:#f6f6f6;font-weight:600}tbody tr:last-child td{border-bottom:0}tbody tr:hover{background:#fafafa}
  .product-name{font-weight:600;min-width:110px}
- .row-actions{display:flex;flex-direction:column;align-items:stretch;gap:5px}.row-actions button{padding:5px 9px;font-size:.78rem}
+ .row-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.row-actions button{padding:6px 10px;font-size:.78rem}
  .status{display:inline-block;background:#e9f4eb;color:#235b32;padding:4px 9px;border-radius:20px;white-space:nowrap;font-size:.78rem}.status.inactive{background:#eee;color:#555}
- .pagination{margin:16px 0 0;font-size:.85rem;color:#555}
+ .pagination{margin:16px 0 0;font-size:.85rem;color:#555}.page-size{flex-direction:row;align-items:center;gap:8px;font-weight:400}.page-size select{width:auto;padding:6px 8px}.search .filter-label{flex:0 1 150px;max-width:150px}.search .controls{align-self:end}.search select{min-height:40px}.pagination .controls{gap:10px}
  .feedback{padding:12px 14px;border-radius:8px;margin:0 0 16px;font-size:.9rem}.success{background:#edf6ef;color:#235b32;border:1px solid #c6e0cc}.failure{background:#fff1f1;border:1px solid #e9c4c4}[role=alert]{color:#9b2222}
  .empty{text-align:center;padding:32px 12px;color:#555}.empty p{margin:6px 0 0;font-size:.85rem}
- @media(max-width:600px){.fields{grid-template-columns:1fr}.editor .controls{justify-content:flex-start}.search label{max-width:none}.table-scroll table{min-width:560px}}
+ @media(max-width:600px){.fields{grid-template-columns:1fr}.editor .controls{justify-content:flex-start}.search label{max-width:none}.table-scroll table{min-width:650px}}
  `]
 })
 export class ProductDirectory {
@@ -93,6 +93,24 @@ export class ProductDirectory {
  readonly formOpen=signal(false);
  readonly editing=signal<Product|null>(null);
  readonly query=this.fb.nonNullable.control('',Validators.maxLength(150));
+ readonly pageSize=signal(10);
+ readonly statusFilter=signal<'all'|'active'|'inactive'>('all');
+ private appliedStatus: boolean | undefined;
+ changePageSize(value:string){
+  if(this.busy())return;
+  const size=Number(value);
+  if(![10,20,50].includes(size))return;
+  this.pageSize.set(size);this.load(0);
+ }
+ changeStatusFilter(value:string){
+  if(this.busy() || !['all','active','inactive'].includes(value))return;
+  this.statusFilter.set(value as 'all'|'active'|'inactive');
+  this.appliedStatus=value==='all'?undefined:value==='active';this.load(0);
+ }
+ clearFilters(){
+  if(this.busy())return;
+  this.query.reset();this.statusFilter.set('all');this.appliedStatus=undefined;this.search();
+ }
  private appliedSearch='';
  readonly form=this.fb.nonNullable.group({
   sku:['',[Validators.required,Validators.maxLength(80),Validators.pattern(/^[A-Za-z0-9][A-Za-z0-9._-]*$/)]],
@@ -105,7 +123,7 @@ export class ProductDirectory {
  load(number:number){
   if(this.loading() || number<0)return;
   this.loading.set(true);this.error.set('');
-  this.api.list(number,20,this.appliedSearch).pipe(timeout(30000),takeUntilDestroyed(this.destroy),finalize(()=>this.loading.set(false))).subscribe({
+  (this.appliedStatus===undefined ? this.api.list(number,this.pageSize(),this.appliedSearch) : this.api.list(number,this.pageSize(),this.appliedSearch,this.appliedStatus)).pipe(timeout(30000),takeUntilDestroyed(this.destroy),finalize(()=>this.loading.set(false))).subscribe({
    next:data=>this.page.set(data),error:()=>{this.page.set(null);this.error.set('Unable to load products. Please retry.');}
   });
  }

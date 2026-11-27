@@ -7,8 +7,10 @@ import { Product, ProductPage, ProductCreateRequest, ProductUpdateRequest } from
 export class ProductService {
   private readonly http = inject(HttpClient);
   private readonly url = '/api/products';
-  list(page = 0, size = 20, search = '') {
-    return this.http.get<ProductPage>(this.url, { params: { page, size, search } });
+  list(page = 0, size = 20, search = '', active?: boolean) {
+    const params: Record<string, string | number | boolean> = { page, size, search };
+    if (active !== undefined) params['active'] = active;
+    return this.http.get<ProductPage>(this.url, { params });
   }
   get(sku: string) { return this.http.get<Product>(this.url + '/' + encodeURIComponent(sku)); }
   create(request: ProductCreateRequest) {
