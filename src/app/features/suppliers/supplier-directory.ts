@@ -32,7 +32,7 @@ import { Supplier, SupplierPage } from './models/supplier.models';
  @if(form.invalid && form.touched){<p role="alert">Enter a supplier name and valid contact details.</p>}
  <div class="controls"><button class="primary" type="submit" [disabled]="busy()">{{saving() ? 'Saving…' : 'Save supplier'}}</button><button type="button" [disabled]="busy()" (click)="formOpen.set(false)">Cancel</button></div>
  </form>}
- <form class="toolbar search" (ngSubmit)="search()"><label>Search by name<input [formControl]="query" maxlength="150" placeholder="Search suppliers…" /></label><div class="controls"><button type="submit" [disabled]="busy()">Search</button><button type="button" [disabled]="busy()" (click)="query.reset(); search()">Clear</button><button type="button" [disabled]="busy()" (click)="load(page()?.number ?? 0)">Refresh</button></div></form>
+ <form class="toolbar search" (submit)="$event.preventDefault(); search()"><label>Search by name<input [formControl]="query" maxlength="150" placeholder="Search suppliers…" /></label><div class="controls"><button type="submit" [disabled]="busy()">Search</button><button type="button" [disabled]="busy()" (click)="query.reset(); search()">Clear</button><button type="button" [disabled]="busy()" (click)="load(page()?.number ?? 0)">Refresh</button></div></form>
  @if(loading()){<p role="status">Loading suppliers…</p>}
  @if(page(); as data){
  @if(data.content.length){<div class="table-scroll" tabindex="0"><table><thead><tr><th>Name</th><th>Contact details</th><th>Address</th><th>Status</th>@if(auth.role()==='ADMIN'){<th>Actions</th>}</tr></thead><tbody>
