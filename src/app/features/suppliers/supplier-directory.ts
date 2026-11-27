@@ -15,13 +15,12 @@ import { Supplier, SupplierPage } from './models/supplier.models';
  template:`
  <app-breadcrumbs [items]="[{label:'Workspace'},{label:'Suppliers'}]" />
  <app-page-header title="Suppliers" description="Manage supplier records and contact details." />
- <section class="surface-card directory">
- <div class="toolbar"><div><h2>Supplier directory</h2><p class="muted">Manage your purchasing contacts in one place.</p></div>@if(auth.role()==='ADMIN'){<button class="primary" [disabled]="busy() || formOpen()" (click)="openForm(null)">Add supplier</button>}</div>
- @if(notice()){<p class="feedback success" role="status">{{notice()}}</p>}
- @if(error()){<p class="feedback failure" role="alert">{{error()}}</p>}
  @if(formOpen() && auth.role()==='ADMIN'){
+ <section class="surface-card editor-card" aria-labelledby="supplier-editor-title">
  <form class="editor" [formGroup]="form" (ngSubmit)="save()" novalidate>
- <h2>{{editing() ? 'Edit supplier' : 'New supplier'}}</h2>
+ <h2 id="supplier-editor-title">{{editing() ? 'Edit supplier' : 'Add supplier'}}</h2>
+ <p class="muted">{{editing() ? 'Update supplier information and contact details.' : 'Enter the supplier information and contact details.'}}</p>
+ @if(error()){<p class="feedback failure editor-feedback" role="alert">{{error()}}</p>}
  <div class="fields">
  <label>Supplier name (required)<input formControlName="name" maxlength="150" /></label>
  <label>Contact person<input formControlName="contactName" maxlength="150" /></label>
@@ -31,7 +30,12 @@ import { Supplier, SupplierPage } from './models/supplier.models';
  </div>
  @if(form.invalid && form.touched){<p role="alert">Enter a supplier name and valid contact details.</p>}
  <div class="controls"><button class="primary" type="submit" [disabled]="busy()">{{saving() ? 'Saving…' : 'Save supplier'}}</button><button type="button" [disabled]="busy()" (click)="formOpen.set(false)">Cancel</button></div>
- </form>}
+ </form>
+ </section>}
+ <section class="surface-card directory">
+ <div class="toolbar"><div><h2>Supplier directory</h2><p class="muted">Manage your purchasing contacts in one place.</p></div>@if(auth.role()==='ADMIN'){<button class="primary" [disabled]="busy() || formOpen()" (click)="openForm(null)">Add supplier</button>}</div>
+ @if(notice()){<p class="feedback success" role="status">{{notice()}}</p>}
+ @if(error() && !formOpen()){<p class="feedback failure" role="alert">{{error()}}</p>}
  <form class="toolbar search" (submit)="$event.preventDefault(); search()"><label>Search by name<input [formControl]="query" maxlength="150" placeholder="Search suppliers…" /></label><div class="controls"><button type="submit" [disabled]="busy()">Search</button><button type="button" [disabled]="busy()" (click)="query.reset(); search()">Clear</button><button type="button" [disabled]="busy()" (click)="load(page()?.number ?? 0)">Refresh</button></div></form>
  @if(loading()){<p role="status">Loading suppliers…</p>}
  @if(page(); as data){
@@ -42,12 +46,12 @@ import { Supplier, SupplierPage } from './models/supplier.models';
  </section>`,
  styles:[`
  :host{display:block;min-width:0}
- .directory{margin-top:24px;padding:clamp(16px,2.2vw,28px);min-width:0}
+ .directory,.editor-card{margin-top:24px;padding:clamp(16px,2.2vw,28px);min-width:0}
  .toolbar,.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
  .toolbar{justify-content:space-between;margin-bottom:20px}
  h2{font-size:1.1rem;margin:0}
  .muted{font-size:.85rem;color:#666;margin:5px 0 0}
- .editor{background:#f8f8f8;border:1px solid #ddd;border-radius:12px;padding:20px;margin-bottom:24px}
+ .editor{margin:0}.editor-feedback{margin-top:16px}.editor .controls{justify-content:flex-end}
  .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:16px 0}
  .address{grid-column:1/-1}
  label{display:flex;flex-direction:column;gap:6px;font-size:.85rem;font-weight:600;min-width:0}
@@ -66,7 +70,7 @@ import { Supplier, SupplierPage } from './models/supplier.models';
  .pagination{margin:16px 0 0;font-size:.85rem;color:#555}
  .feedback{padding:12px 14px;border-radius:8px;margin:0 0 16px;font-size:.9rem}.success{background:#edf6ef;color:#235b32;border:1px solid #c6e0cc}.failure{background:#fff1f1;border:1px solid #e9c4c4}[role=alert]{color:#9b2222}
  .empty{text-align:center;padding:32px 12px;color:#555}.empty p{margin:6px 0 0;font-size:.85rem}
- @media(max-width:600px){.fields{grid-template-columns:1fr}.editor{padding:14px}.search label{max-width:none}.table-scroll table{min-width:560px}}
+ @media(max-width:600px){.fields{grid-template-columns:1fr}.editor .controls{justify-content:flex-start}.search label{max-width:none}.table-scroll table{min-width:560px}}
  `]
 })
 export class SupplierDirectory {
