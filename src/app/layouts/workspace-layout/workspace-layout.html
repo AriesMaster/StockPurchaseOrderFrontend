@@ -19,6 +19,7 @@
         <a routerLink="/dashboard/employees" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="open.set(false)">Employees</a>
       }
       <a routerLink="/dashboard/suppliers" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="open.set(false)">Suppliers</a>
+      @if (auth.role() === 'ADMIN') { <a routerLink="/dashboard/supplier-catalogues" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="open.set(false)">Supplier catalogues</a> }
       <a routerLink="/dashboard/products" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="open.set(false)">Products</a>
       <a routerLink="/dashboard/purchase-orders" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="open.set(false)">Purchase orders</a>
     </nav>

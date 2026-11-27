@@ -8,12 +8,11 @@ import { Breadcrumbs } from '../../shared/components/breadcrumbs/breadcrumbs';
 import { toApiProblem } from '../../core/api-problem';
 import { SupplierService } from '../suppliers/services/supplier.service';
 import { Supplier, SupplierPage } from '../suppliers/models/supplier.models';
-import { ProductService } from '../products/services/product.service';
-import { Product, ProductPage } from '../products/models/product.models';
+import { SupplierCatalogueService, SupplierOffer, OfferPage } from '../suppliers/services/supplier-catalogue.service';
 import { PurchaseOrderService } from './services/purchase-order.service';
 import { PurchaseOrder, PurchaseOrderPage, PurchaseOrderStatus } from './models/purchase-order.models';
 
-interface DraftLine { product: Product; quantity: number; }
+interface DraftLine { product: SupplierOffer; quantity: number; }
 
 @Component({
  selector: 'app-purchase-order-directory',
@@ -25,7 +24,7 @@ export class PurchaseOrderDirectory {
  private readonly auth=inject(AuthStore);
  private readonly api=inject(PurchaseOrderService);
  private readonly suppliers=inject(SupplierService);
- private readonly products=inject(ProductService);
+ private readonly products=inject(SupplierCatalogueService);
  private readonly destroy=inject(DestroyRef);
  readonly canCreate=computed(()=>['ADMIN','PURCHASING_OFFICER'].some(role=>role===this.auth.role()));
  readonly page=signal<PurchaseOrderPage|null>(null);
@@ -41,7 +40,7 @@ export class PurchaseOrderDirectory {
  readonly detail=signal<PurchaseOrder|null>(null);
  readonly detailLoading=signal(false);
  readonly supplierPage=signal<SupplierPage|null>(null);
- readonly productPage=signal<ProductPage|null>(null);
+ readonly productPage=signal<OfferPage|null>(null);
  readonly supplierLoading=signal(false);
  readonly productLoading=signal(false);
  readonly supplierError=signal('');
@@ -76,7 +75,7 @@ export class PurchaseOrderDirectory {
   this.lines.set([]);this.selectedSupplier.set(null);
   this.supplierPage.set(null);this.productPage.set(null);
   this.supplierSearch='';this.productSearch='';
-  this.formOpen.set(true);this.loadSuppliers(0);this.loadProducts(0);
+  this.formOpen.set(true);this.loadSuppliers(0);
  }
  cancel(){
   if(this.saving()||this.supplierLoading()||this.productLoading())return;
@@ -92,16 +91,22 @@ export class PurchaseOrderDirectory {
   });
  }
  loadProducts(number:number){
-  if(this.productLoading()||number<0)return;
+  const supplier=this.selectedSupplier();
+  if(!supplier||this.productLoading()||number<0)return;
   this.productLoading.set(true);this.productError.set('');
-  this.products.list(number,10,this.productSearch,true).pipe(timeout(30000),takeUntilDestroyed(this.destroy),finalize(()=>this.productLoading.set(false))).subscribe({
+  this.products.list(supplier.id,number,10,this.productSearch,true).pipe(timeout(30000),takeUntilDestroyed(this.destroy),finalize(()=>this.productLoading.set(false))).subscribe({
    next:value=>this.productPage.set(value),error:()=>{this.productPage.set(null);this.productError.set('Unable to load products. Search again to retry.');}
   });
  }
- chooseSupplier(supplier:Supplier){if(this.canCreate()&&!this.saving()&&supplier.active)this.selectedSupplier.set(supplier);}
+ chooseSupplier(supplier:Supplier){
+  if(!this.canCreate()||this.saving()||this.productLoading()||!supplier.active||this.selectedSupplier()?.id===supplier.id)return;
+  this.selectedSupplier.set(supplier);this.lines.set([]);this.productPage.set(null);this.productSearch='';this.loadProducts(0);
+ }
+ chooseSupplierId(value:string){const supplier=this.supplierPage()?.content.find(s=>s.id===Number(value));if(supplier)this.chooseSupplier(supplier);}
+ addSelectedProduct(value:string){const product=this.productPage()?.content.find(p=>p.sku===value);if(product)this.addProduct(product);}
  hasProduct(sku:string){return this.lines().some(line=>line.product.sku===sku);}
- addProduct(product:Product){
-  if(!this.canCreate()||this.saving()||!product.active||this.hasProduct(product.sku)||this.lines().length>=100)return;
+ addProduct(product:SupplierOffer){
+  if(!this.canCreate()||this.saving()||!this.selectedSupplier()||!product.active||!product.productActive||this.hasProduct(product.sku)||this.lines().length>=100)return;
   this.lines.update(lines=>[...lines,{product,quantity:1}]);
  }
  changeQuantity(sku:string,value:number){if(!this.saving())this.lines.update(lines=>lines.map(line=>line.product.sku===sku?{...line,quantity:value}:line));}

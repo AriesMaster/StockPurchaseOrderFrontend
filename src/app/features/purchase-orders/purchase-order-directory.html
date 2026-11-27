@@ -4,40 +4,39 @@
 <section class="surface-card editor-card" aria-labelledby="create-heading">
   <div class="heading"><div><h2 id="create-heading">Create purchase order</h2><p class="muted">Select an active supplier and add products to your draft.</p></div><button type="button" (click)="cancel()" [disabled]="saving() || supplierLoading() || productLoading()">Cancel</button></div>
   @if(formError()){<p class="feedback error" role="alert">{{formError()}}</p>}
-  <div class="pickers">
+  <div class="compact-pickers">
     <section class="picker">
-      <h3>1. Select supplier</h3>
-      @if(selectedSupplier(); as supplier){<p class="selection">Selected: <strong>{{supplier.name}}</strong></p>}
+      <h3>Supplier</h3>
       <form class="toolbar" (submit)="$event.preventDefault();searchSuppliers(supplierQuery.value)">
-        <input #supplierQuery aria-label="Search suppliers" placeholder="Search suppliers…" maxlength="150" />
-        <button type="submit" [disabled]="supplierLoading() || saving()">Search</button>
+        <input #supplierQuery aria-label="Search suppliers" placeholder="Find supplier…" maxlength="150" />
+        <button type="submit" [disabled]="supplierLoading()||saving()||productLoading()">Search</button>
       </form>
       @if(supplierError()){<p role="alert" class="error">{{supplierError()}}</p>}
-      @if(supplierLoading()){<p role="status">Loading suppliers…</p>}
-      @if(supplierPage(); as data){
-        @for(supplier of data.content;track supplier.id){
-          <button type="button" class="option" [class.selected]="selectedSupplier()?.id===supplier.id" [disabled]="saving()" (click)="chooseSupplier(supplier)"><span>{{supplier.name}}</span><span>{{selectedSupplier()?.id===supplier.id?'Selected':'Select'}}</span></button>
-        }@empty{<p>No active suppliers found.</p>}
-        <div class="pager"><small>Page {{data.totalPages?data.number+1:0}} of {{data.totalPages}}</small><button type="button" [disabled]="supplierLoading()||saving()||data.number===0" (click)="loadSuppliers(data.number-1)">Previous</button><button type="button" [disabled]="supplierLoading()||saving()||data.number+1>=data.totalPages" (click)="loadSuppliers(data.number+1)">Next</button></div>
-      }
+      <select #supplierSelect aria-label="Select supplier" [disabled]="saving()||supplierLoading()||productLoading()" [value]="selectedSupplier()?.id??''" (change)="chooseSupplierId(supplierSelect.value)">
+        <option value="">Choose a supplier</option>
+        @for(supplier of supplierPage()?.content??[];track supplier.id){<option [value]="supplier.id">{{supplier.name}}</option>}
+      </select>
+      @if(selectedSupplier();as supplier){<p class="selection">Selected: <strong>{{supplier.name}}</strong></p><small>Changing supplier clears order items.</small>}
+      @if(supplierPage();as data){<div class="pager"><small>Page {{data.totalPages?data.number+1:0}} of {{data.totalPages}}</small><button type="button" [disabled]="supplierLoading()||saving()||productLoading()||data.number===0" (click)="loadSuppliers(data.number-1)">Previous</button><button type="button" [disabled]="supplierLoading()||saving()||productLoading()||data.number+1>=data.totalPages" (click)="loadSuppliers(data.number+1)">Next</button></div>}
     </section>
     <section class="picker">
-      <h3>2. Add products</h3>
+      <h3>Add order items</h3>
+      @if(selectedSupplier()){
       <form class="toolbar" (submit)="$event.preventDefault();searchProducts(productQuery.value)">
-        <input #productQuery aria-label="Search products by name or SKU" placeholder="Search name or SKU…" maxlength="150" />
-        <button type="submit" [disabled]="productLoading() || saving()">Search</button>
+        <input #productQuery aria-label="Search supplier products" placeholder="Find product by name or SKU…" maxlength="150" />
+        <button type="submit" [disabled]="productLoading()||saving()">Search</button>
       </form>
       @if(productError()){<p role="alert" class="error">{{productError()}}</p>}
-      @if(productLoading()){<p role="status">Loading products…</p>}
-      @if(productPage(); as data){
-        @for(product of data.content;track product.sku){
-          <button type="button" class="option" [disabled]="saving()||hasProduct(product.sku)||lines().length>=100" (click)="addProduct(product)"><span>{{product.name}}<small>{{product.sku}} · {{product.unitPrice | currency:'ZAR':'R':'1.2-2'}}</small></span><span>{{hasProduct(product.sku)?'Added':'+ Add'}}</span></button>
-        }@empty{<p>No active products found.</p>}
+      @if(productLoading()){<p role="status">Loading supplier products…</p>}
+      @if(productPage();as data){
+        <div class="toolbar"><select #productSelect aria-label="Select product" [disabled]="saving()||productLoading()"><option value="">Choose a product</option>@for(product of data.content;track product.sku){<option [value]="product.sku" [disabled]="hasProduct(product.sku)">{{product.name}} · {{product.unitPrice|currency:'ZAR':'R':'1.2-2'}}</option>}</select><button type="button" [disabled]="saving()||productLoading()||lines().length>=100" (click)="addSelectedProduct(productSelect.value);productSelect.value=''">+ Add</button></div>
+        @if(!data.content.length){<p class="muted">No matching products in this supplier's catalogue.</p>}
         <div class="pager"><small>Page {{data.totalPages?data.number+1:0}} of {{data.totalPages}}</small><button type="button" [disabled]="productLoading()||saving()||data.number===0" (click)="loadProducts(data.number-1)">Previous</button><button type="button" [disabled]="productLoading()||saving()||data.number+1>=data.totalPages" (click)="loadProducts(data.number+1)">Next</button></div>
       }
+      }@else{<p class="muted">Choose a supplier first to see their available products.</p>}
     </section>
   </div>
-  <h3>3. Review order lines</h3>
+  <h3>Order items</h3>
   <div class="table-scroll"><table><thead><tr><th>Product</th><th>Unit price</th><th>Quantity</th><th>Line total</th><th>Actions</th></tr></thead><tbody>
     @for(line of lines();track line.product.sku){
       <tr><td><strong>{{line.product.name}}</strong><small>{{line.product.sku}}</small></td><td>{{line.product.unitPrice | currency:'ZAR':'R':'1.2-2'}}</td><td><input #qty type="number" min="1" max="2147483647" step="1" class="quantity" [attr.aria-label]="'Quantity for '+line.product.name" [value]="line.quantity" [disabled]="saving()" [attr.aria-invalid]="!validQuantity(line.quantity)" (input)="changeQuantity(line.product.sku,qty.valueAsNumber)" />@if(!validQuantity(line.quantity)){<small class="error">Enter a positive whole number.</small>}</td><td>{{validQuantity(line.quantity)?(line.product.unitPrice*line.quantity | currency:'ZAR':'R':'1.2-2'):'—'}}</td><td><button type="button" [disabled]="saving()" (click)="removeProduct(line.product.sku)">Remove</button></td></tr>
