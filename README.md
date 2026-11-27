@@ -1,26 +1,32 @@
 # StockFlow — Frontend
 
-Angular web application for managing purchase orders, receiving deliveries and tracking inventory for small hardware stores.
+An Angular workspace for a hardware store to manage suppliers and products and create draft purchase orders. A buyer chooses a supplier, adds products from its catalogue and sees the total in rand.
 
-[Portfolio case study](https://thabo.netlify.app/stockflow.html)
+The feature and test descriptions below refer to [feature/auth-ui](https://github.com/AriesMaster/StockPurchaseOrderFrontend/tree/feature/auth-ui). The `main` branch contains the public Angular shell.
 
-**Live development preview:** [Angular frontend](https://stockflow-management.netlify.app/) · [Backend health](https://stockflow-backend-5cke.onrender.com/actuator/health). Both hosting dashboards confirm deployment; backend health returned `UP` on 26 November 2026. The Netlify same-origin API proxy is configured; proxy CSRF response was verified; full cloud workflows remain unverified.
+[Portfolio case study](https://thabo.netlify.app/stockflow.html) · [Development preview](https://stockflow-management.netlify.app/) · [Spring Boot API](https://github.com/AriesMaster/StockPurchaseOrderBackend/tree/feature/auth-persistence)
 
+## Create a purchase order
 
-**Status:** Active development. This README describes the current project across branches. The latest implementation is on the [active development branch](https://github.com/AriesMaster/StockPurchaseOrderFrontend/tree/feature/auth-ui); main retains the earlier code baseline. Switch to the development branch to reproduce the latest features and tests. `main` includes the responsive public homepage, navigation, routing, Material theme, Angular HTTP client and local API proxy. Purchase order and inventory screens and their API integration are planned.
+1. An administrator adds suppliers and products, then opens **Supplier catalogues** to link a product to a supplier and enter its agreed unit price.
+2. An administrator or purchasing officer opens **Purchase orders**, selects one active supplier and adds items from its catalogue. Changing supplier clears the current lines.
+3. Enter the quantity for each item and choose **Create draft order**. The server saves the product names and supplier prices. For example, 20 boxes at R12.50 each gives a line total of **R250.00**.
+4. Open **View details** in the directory to see the saved prices, quantities and total. Every active role can read orders and filter the list by status.
 
-## Implementation progress
+Creating a draft leaves stock unchanged. Order approval, cancellation, delivery receiving and stock tracking are planned.
 
-Local verification on 26 November 2026: 98 backend and 66 frontend automated tests passed (164 combined), and both builds succeeded before the latest supplier styling refinement. Administrator sign-in, employee administration, supplier creation and supplier directory rendering were demonstrated locally. The refined supplier UI groups contact details, improves responsive form layout and exposes row actions. Dedicated supplier frontend tests, remaining supplier acceptance checks, full role verification and secure public demo access are pending. Latest cloud authentication remains unverified.
+## Workspace routes
 
-- Authentication: login, refresh, logout, session restoration, guards and API interceptor.
-- Employee Management: administrator-only account creation, pagination, role and status changes, confirmation dialogs.
-- Supplier Management: all-role read/search, administrator create/edit/status actions, reactive forms, pagination and confirmation dialogs.
-- Purchase orders, approvals, deliveries and inventory remain planned UI modules.
+| Route | Who can use it | What it does |
+|---|---|---|
+| `/dashboard` | All active roles | Opens the role dashboard after login or session restoration. |
+| `/dashboard/employees` | Administrator | Creates employees and changes roles and account status. |
+| `/dashboard/suppliers` | All can read, administrator can edit | Searches suppliers and manages contact details and active status. |
+| `/dashboard/products` | All can read, administrator can edit | Searches products by SKU or name and manages prices and active status. |
+| `/dashboard/supplier-catalogues` | Administrator | Assigns products to suppliers and maintains each offer’s price and availability. |
+| `/dashboard/purchase-orders` | All can read, administrator and purchasing officer can create | Creates drafts, filters the directory and displays order details on the same screen. |
 
-## Roles
-
-ADMIN, PURCHASING_OFFICER, APPROVER and WAREHOUSE_OFFICER. Backend authorization is authoritative; Angular guards and conditional controls are not security boundaries.
+Spring Security enforces permissions. Angular uses route guards, keeps the access token in memory and restores the session through the API.
 
 ## Technology
 
@@ -48,71 +54,34 @@ npm run build
 npm test -- --watch=false
 ```
 
-## Build and test verification
+The development server proxies `/api` to the Spring Boot service on port 8080. Start the API before signing in.
 
-On 26 November 2026, the local Angular production build succeeded and 66 Vitest tests passed on the authentication feature branch. The suite covers authentication, guards, interceptor, employee service and directory, shared confirmation dialogs and dashboard. Supplier-specific tests remain pending.
-
-## Development branch source structure
+## Source structure
 
 ```text
-src/
-├── app/
-│   ├── core/auth/                     # Auth store, guards, interceptor, services
-│   ├── features/home/                 # Public landing page
-│   ├── features/auth/login/
-│   ├── features/dashboard/
-│   ├── features/employees/
-│   ├── features/suppliers/
-│   ├── layouts/workspace-layout/
-│   ├── layouts/public-layout/         # Shared public shell
-│   ├── shared/components/
-│   │   ├── navbar/
-│   │   └── footer/
-│   ├── app.ts
-│   ├── app.html
-│   ├── app.scss
-│   ├── app.spec.ts
-│   ├── app.config.ts
-│   └── app.routes.ts
-├── index.html
-├── main.ts
-└── styles.scss
+src/app/
+├── core/                      # Authentication, session handling and API errors
+├── features/
+│   ├── home/                  # Public landing page
+│   ├── auth/login/
+│   ├── dashboard/
+│   ├── employees/
+│   ├── suppliers/             # Supplier directory, catalogue editor and HTTP services
+│   ├── products/              # Product directory and HTTP service
+│   └── purchase-orders/       # Draft form, directory, details, models and HTTP service
+├── layouts/                   # Public shell and employee workspace
+└── shared/components/         # Navigation, breadcrumbs, page headers and dialogs
 ```
 
-## Planned application workflow
+## Verification and next work
 
-Create a draft order, approve it, receive partial or complete deliveries, review outstanding quantities and inspect inventory movements. For example, receiving 12 of 20 ordered units leaves 8 outstanding.
+On 27 November 2026 the production build succeeded and **123 Vitest tests passed across 16 files** at [75bdb3e](https://github.com/AriesMaster/StockPurchaseOrderFrontend/commit/75bdb3eb43c491f69f94f42641ae2bf4bf835358). The suite covers login/session handling, guards, the interceptor, employee, supplier and product directories, HTTP services and shared components.
 
-| Planned route | Purpose | Backend API |
-|---|---|---|
-| /purchase-orders | Order lookup | GET /api/purchase-orders/{id} |
-| /purchase-orders/new | Create draft | POST /api/purchase-orders |
-| /purchase-orders/:id | Details, approval and cancellation | GET /api/purchase-orders/{id}; POST /api/purchase-orders/{id}/approval or /cancellation |
-| /purchase-orders/:id/receive | Record delivery | POST /api/purchase-orders/{id}/receipts |
-| /inventory | Stock and movement history | GET /api/inventory/{sku}; GET /api/stock-movements |
+The local browser showed two saved draft orders before the supplier picker was updated. The next browser check is to assign a supplier price, save a draft through the new picker and compare the saved total. Dedicated tests for the catalogue editor and order form are still planned.
 
-Planned feature folders: `purchase-orders/` and `inventory/`, with feature-local models, API services, components and tests. Shared HTTP problem handling will live in `core/`. Angular HttpClient and a local `/api/**` development proxy to port 8080 are configured. Shared error normalization lives in `core/api-problem.ts`; employee and supplier API services are implemented; procurement services remain pending. Receipt retries must reuse the original idempotency key and quantities.
+## Cloud deployment
 
-## Roadmap
-
-- [x] Local supplier creation and directory rendering
-- [x] Refined supplier layout visually verified
-- [ ] Secure public demo access and deployed login verification
-
-- [x] Angular scaffold and responsive StockFlow homepage
-- [x] Material theme, HTTP client and development proxy
-- [x] Login UI, auth state, guards and protected workspace on `feature/auth-ui`
-- [x] Local administrator sign-in with Spring Boot API
-- [x] Employee Management UI and tests
-- [x] Supplier Management UI and build
-- [ ] Remaining supplier browser acceptance and supplier-specific tests
-- [ ] Purchase order and inventory screens
-- [ ] API integration and validation/error handling
-- [ ] Feature tests and end-to-end verification
-- [x] Automated Angular CI on `feature/auth-ui`
-- [x] Netlify development preview deployment
-- [x] Verify deployed CSRF proxy response
-- [ ] Verify latest cloud browser workflows
+Netlify builds `feature/auth-ui` with `npm run build`, publishes `dist/stock-purchase-order-frontend/browser` and proxies `/api/*` to Render before the SPA fallback. The preview health and proxied CSRF checks were recorded on 26 November. The version with supplier catalogues still needs a hosted login and draft-order walkthrough. [Deployment notes](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/feature/auth-persistence/docs/cloud-deployment.md)
 
 ## Documentation
 
@@ -124,7 +93,3 @@ Planned feature folders: `purchase-orders/` and `inventory/`, with feature-local
 - [Physical DFD](https://github.com/AriesMaster/StockPurchaseOrderBackend/blob/feature/auth-persistence/docs/physical-dfd.md)
 
 See [LICENSE](LICENSE).
-
-## Cloud deployment
-
-Netlify builds `feature/auth-ui` with Node 26.13.0 and `npm run build`, publishing `dist/stock-purchase-order-frontend/browser`. The feature branch `netlify.toml` proxies `/api/*` to Render before the SPA fallback. No database credentials or JWT signing secrets belong in the frontend. The published preview is not a completed procurement system; latest cloud workflows require verification.
