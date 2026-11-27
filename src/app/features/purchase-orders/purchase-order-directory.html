@@ -1,0 +1,70 @@
+<app-breadcrumbs [items]="[{label:'Workspace'},{label:'Purchase orders'}]" />
+<app-page-header title="Purchase orders" description="Prepare and track purchases from your suppliers." />
+@if(formOpen() && canCreate()){
+<section class="surface-card editor-card" aria-labelledby="create-heading">
+  <div class="heading"><div><h2 id="create-heading">Create purchase order</h2><p class="muted">Select an active supplier and add products to your draft.</p></div><button type="button" (click)="cancel()" [disabled]="saving() || supplierLoading() || productLoading()">Cancel</button></div>
+  @if(formError()){<p class="feedback error" role="alert">{{formError()}}</p>}
+  <div class="pickers">
+    <section class="picker">
+      <h3>1. Select supplier</h3>
+      @if(selectedSupplier(); as supplier){<p class="selection">Selected: <strong>{{supplier.name}}</strong></p>}
+      <form class="toolbar" (submit)="$event.preventDefault();searchSuppliers(supplierQuery.value)">
+        <input #supplierQuery aria-label="Search suppliers" placeholder="Search suppliers…" maxlength="150" />
+        <button type="submit" [disabled]="supplierLoading() || saving()">Search</button>
+      </form>
+      @if(supplierError()){<p role="alert" class="error">{{supplierError()}}</p>}
+      @if(supplierLoading()){<p role="status">Loading suppliers…</p>}
+      @if(supplierPage(); as data){
+        @for(supplier of data.content;track supplier.id){
+          <button type="button" class="option" [class.selected]="selectedSupplier()?.id===supplier.id" [disabled]="saving()" (click)="chooseSupplier(supplier)"><span>{{supplier.name}}</span><span>{{selectedSupplier()?.id===supplier.id?'Selected':'Select'}}</span></button>
+        }@empty{<p>No active suppliers found.</p>}
+        <div class="pager"><small>Page {{data.totalPages?data.number+1:0}} of {{data.totalPages}}</small><button type="button" [disabled]="supplierLoading()||saving()||data.number===0" (click)="loadSuppliers(data.number-1)">Previous</button><button type="button" [disabled]="supplierLoading()||saving()||data.number+1>=data.totalPages" (click)="loadSuppliers(data.number+1)">Next</button></div>
+      }
+    </section>
+    <section class="picker">
+      <h3>2. Add products</h3>
+      <form class="toolbar" (submit)="$event.preventDefault();searchProducts(productQuery.value)">
+        <input #productQuery aria-label="Search products by name or SKU" placeholder="Search name or SKU…" maxlength="150" />
+        <button type="submit" [disabled]="productLoading() || saving()">Search</button>
+      </form>
+      @if(productError()){<p role="alert" class="error">{{productError()}}</p>}
+      @if(productLoading()){<p role="status">Loading products…</p>}
+      @if(productPage(); as data){
+        @for(product of data.content;track product.sku){
+          <button type="button" class="option" [disabled]="saving()||hasProduct(product.sku)||lines().length>=100" (click)="addProduct(product)"><span>{{product.name}}<small>{{product.sku}} · {{product.unitPrice | currency:'ZAR':'R':'1.2-2'}}</small></span><span>{{hasProduct(product.sku)?'Added':'+ Add'}}</span></button>
+        }@empty{<p>No active products found.</p>}
+        <div class="pager"><small>Page {{data.totalPages?data.number+1:0}} of {{data.totalPages}}</small><button type="button" [disabled]="productLoading()||saving()||data.number===0" (click)="loadProducts(data.number-1)">Previous</button><button type="button" [disabled]="productLoading()||saving()||data.number+1>=data.totalPages" (click)="loadProducts(data.number+1)">Next</button></div>
+      }
+    </section>
+  </div>
+  <h3>3. Review order lines</h3>
+  <div class="table-scroll"><table><thead><tr><th>Product</th><th>Unit price</th><th>Quantity</th><th>Line total</th><th>Actions</th></tr></thead><tbody>
+    @for(line of lines();track line.product.sku){
+      <tr><td><strong>{{line.product.name}}</strong><small>{{line.product.sku}}</small></td><td>{{line.product.unitPrice | currency:'ZAR':'R':'1.2-2'}}</td><td><input #qty type="number" min="1" max="2147483647" step="1" class="quantity" [attr.aria-label]="'Quantity for '+line.product.name" [value]="line.quantity" [disabled]="saving()" [attr.aria-invalid]="!validQuantity(line.quantity)" (input)="changeQuantity(line.product.sku,qty.valueAsNumber)" />@if(!validQuantity(line.quantity)){<small class="error">Enter a positive whole number.</small>}</td><td>{{validQuantity(line.quantity)?(line.product.unitPrice*line.quantity | currency:'ZAR':'R':'1.2-2'):'—'}}</td><td><button type="button" [disabled]="saving()" (click)="removeProduct(line.product.sku)">Remove</button></td></tr>
+    }@empty{<tr><td colspan="5" class="empty">Add at least one product to create an order.</td></tr>}
+  </tbody></table></div>
+  <div class="heading total"><div><small>Estimated total · final prices confirmed by server</small><strong>{{estimatedTotal() | currency:'ZAR':'R':'1.2-2'}}</strong></div><button type="button" class="primary" [disabled]="!valid()||saving()||loading()" (click)="save()">{{saving()?'Creating…':'Create draft order'}}</button></div>
+</section>}
+@if(detail();as order){
+<section class="surface-card editor-card" aria-labelledby="detail-heading">
+ <div class="heading"><div><h2 id="detail-heading">Purchase order #{{order.id}}</h2><p class="muted">{{order.supplierName}} · {{order.createdAt | date:'medium'}}</p></div><button type="button" (click)="detail.set(null)">Close details</button></div>
+ <p><span class="status" [attr.data-status]="order.status">{{statusLabel(order.status)}}</span></p>
+ <div class="table-scroll"><table><thead><tr><th>Product</th><th>Unit price</th><th>Ordered</th><th>Received</th><th>Outstanding</th><th>Line total</th></tr></thead><tbody>
+ @for(line of order.lines;track line.sku){<tr><td><strong>{{line.productName}}</strong><small>{{line.sku}}</small></td><td>{{line.unitPrice | currency:'ZAR':'R':'1.2-2'}}</td><td>{{line.orderedQuantity}}</td><td>{{line.receivedQuantity}}</td><td>{{line.outstandingQuantity}}</td><td>{{line.lineTotal | currency:'ZAR':'R':'1.2-2'}}</td></tr>}
+ </tbody></table></div>
+ <div class="total"><small>Order total</small><strong>{{order.total | currency:'ZAR':'R':'1.2-2'}}</strong></div>
+</section>}
+<section class="surface-card directory">
+ <div class="heading"><div><h2>Order directory</h2><p class="muted">Review orders and their current status.</p></div>@if(canCreate()){<button type="button" class="primary" [disabled]="formOpen()||saving()||detailLoading()" (click)="openForm()">Create purchase order</button>}</div>
+ @if(notice()){<p class="feedback success" role="status">{{notice()}}</p>}
+ @if(error()){<p class="feedback error" role="alert">{{error()}}</p>}
+ <div class="toolbar filters"><label>Status <select #statusSelect [value]="status()??''" [disabled]="loading()" (change)="changeStatus(statusSelect.value)"><option value="">All statuses</option>@for(value of statuses;track value){<option [value]="value">{{statusLabel(value)}}</option>}</select></label><button type="button" [disabled]="loading()" (click)="load(page()?.number??0)">Refresh</button></div>
+ @if(loading()){<p role="status">Loading purchase orders…</p>}
+ @if(page();as data){
+ <div class="table-scroll"><table><thead><tr><th>Order</th><th>Supplier</th><th>Created</th><th>Status</th><th>Total</th><th>Actions</th></tr></thead><tbody>
+ @for(order of data.content;track order.id){<tr><td><strong>#{{order.id}}</strong></td><td>{{order.supplierName}}</td><td>{{order.createdAt | date:'mediumDate'}}</td><td><span class="status" [attr.data-status]="order.status">{{statusLabel(order.status)}}</span></td><td>{{order.total | currency:'ZAR':'R':'1.2-2'}}</td><td><button type="button" [disabled]="formOpen()||detailLoading()" (click)="view(order.id)">View details</button></td></tr>}
+ @empty{<tr><td colspan="6" class="empty">No purchase orders found.</td></tr>}
+ </tbody></table></div>
+ <div class="pager"><span>{{data.totalElements}} {{data.totalElements===1?'order':'orders'}} · Page {{data.totalPages?data.number+1:0}} of {{data.totalPages}}</span><div class="toolbar"><label>Rows per page <select #sizeSelect [value]="pageSize()" [disabled]="loading()" (change)="changeSize(sizeSelect.value)"><option value="10">10</option><option value="20">20</option><option value="50">50</option></select></label><button type="button" [disabled]="loading()||data.number===0" (click)="load(data.number-1)">Previous</button><button type="button" [disabled]="loading()||data.number+1>=data.totalPages" (click)="load(data.number+1)">Next</button></div></div>
+ }
+</section>

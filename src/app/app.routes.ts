@@ -18,7 +18,7 @@ const restoreSessionGuard: CanActivateFn = () => {
 
 export const routes: Routes = [
   { path: 'dashboard', canActivate: [restoreSessionGuard], loadComponent: () => import('./layouts/workspace-layout/workspace-layout').then(m => m.WorkspaceLayout),
-    children: [{ path: '', loadComponent: () => import('./features/dashboard/dashboard').then(m => m.Dashboard) }, { path: 'employees', canActivate: [adminGuard], loadComponent: () => import('./features/employees/employee-directory').then(m => m.EmployeeDirectory) }, { path: 'suppliers', loadComponent: () => import('./features/suppliers/supplier-directory').then(m => m.SupplierDirectory) }, { path: 'products', loadComponent: () => import('./features/products/product-directory').then(m => m.ProductDirectory) }] },
+    children: [{ path: '', loadComponent: () => import('./features/dashboard/dashboard').then(m => m.Dashboard) }, { path: 'employees', canActivate: [adminGuard], loadComponent: () => import('./features/employees/employee-directory').then(m => m.EmployeeDirectory) }, { path: 'suppliers', loadComponent: () => import('./features/suppliers/supplier-directory').then(m => m.SupplierDirectory) }, { path: 'products', loadComponent: () => import('./features/products/product-directory').then(m => m.ProductDirectory) }, { path: 'purchase-orders', loadComponent: () => import('./features/purchase-orders/purchase-order-directory').then(m => m.PurchaseOrderDirectory) }] },
   { path: '', component: PublicLayout, children: [
     { path: 'login', loadComponent: () => import('./features/auth/login/login').then(m => m.Login) },
     { path: '', loadComponent: () => import('./features/home/home').then(m => m.Home) }
